@@ -30,7 +30,7 @@ from repomate_plug import plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
-SECTION = 'JUNIT'
+SECTION = 'junit4'
 
 HAMCREST_JAR = 'hamcrest-core-1.3.jar'
 JUNIT_JAR = 'junit-4.12.jar'
