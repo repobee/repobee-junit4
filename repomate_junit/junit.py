@@ -5,14 +5,8 @@
     Requires ``javac`` and ``java`` to be installed, and having hamcrest and
     junit 4.12 on the CLASSPATH variable.
 
-This plugin is mostly for demonstrational purposes, showing off some of the
-more advanced features of the plugin system. It, very unintelligently, finds
-all of the ``.java`` files in a repository and tries to compile them all at the
-same time. Duplicate files etc. will cause this to fail.
-
-The point of this plugin is however mostly to demonstrate how to use the hooks,
-and specifically the more advanced use of the ``clone_parser_hook`` and
-``parse_args`` hooks.
+This plugin is mostly for demonstrational purposes, showing of a moderately
+advanced external plugin.
 
 .. module:: javac
     :synopsis: Plugin that tries to compile all .java files in a repo.
@@ -29,9 +23,17 @@ import re
 import pathlib
 from typing import Union, Iterable, Tuple
 
+import daiquiri
 from colored import bg, style
 
 from repomate_plug import plug
+
+LOGGER = daiquiri.getLogger(__file__)
+
+SECTION = 'JUNIT'
+
+HAMCREST_JAR = 'hamcrest-core-1.3.jar'
+JUNIT_JAR = 'junit-4.12.jar'
 
 
 def get_num_failed(test_output):
@@ -47,6 +49,9 @@ class JunitTestsHook:
         self._master_repo_names = []
         self._reference_tests_dir = None
         self._ignore_tests = []
+        self._hamcrest_path = ''
+        self._junit_path = ''
+        self._classpath = None
 
     @plug.hookimpl
     def act_on_cloned_repo(self,
@@ -76,12 +81,12 @@ class JunitTestsHook:
                     if not matches else \
                     'multiple master repo names matching student repo: {}'.format(
                         ', '.join(matches))
-            return plug.HookResult(__file__, plug.ERROR, msg)
+            return plug.HookResult(SECTION, plug.ERROR, msg)
 
         test_dir = (self._reference_tests_dir / master_name)
         if not test_dir.exists():
             return plug.HookResult(
-                __file__, plug.ERROR,
+                SECTION, plug.ERROR,
                 'no reference test directory for {} in {}'.format(
                     master_name, self._reference_tests_dir))
 
@@ -93,13 +98,13 @@ class JunitTestsHook:
 
         if not test_classes:
             return plug.HookResult(
-                __file__, plug.WARNING,
+                SECTION, plug.WARNING,
                 "no files ending in `Test.java` found in {}".format(path))
 
         status, msg = self._javac(java_files)
 
         if status != plug.SUCCESS:
-            return plug.HookResult(__file__, status, msg)
+            return plug.HookResult(SECTION, status, msg)
 
         compile_succeeded, compile_failed = self._compile(
             test_classes, java_files)
@@ -110,7 +115,7 @@ class JunitTestsHook:
             itertools.chain(tests_succeeded, tests_failed, compile_failed))
 
         status = plug.ERROR if tests_failed or compile_failed else plug.SUCCESS
-        return plug.HookResult(__file__, status, msg)
+        return plug.HookResult(SECTION, status, msg)
 
     def _format_results(self, result_pairs):
         backgrounds = {
@@ -158,10 +163,26 @@ class JunitTestsHook:
                 succeeded.append((status, msg))
         return succeeded, failed
 
+    def _generate_classpath(self, test_class: pathlib.Path,
+                            prod_class: pathlib.Path):
+        warn = ('`{}` is not configured and not on the CLASSPATH variable.'
+                'This will probably crash.')
+        classpath = "{}:{!s}:{!s}".format(self._classpath, test_class.parent,
+                                          prod_class.parent)
+        if not (self._hamcrest_path or HAMCREST_JAR in classpath):
+            LOGGER.warning(warn.format(HAMCREST_JAR))
+        if not (self._junit_path or JUNIT_JAR in classpath):
+            LOGGER.warning(warn.format(JUNIT_JAR))
+
+        if self._hamcrest_path:
+            classpath += ':{}'.format(self._hamcrest_path)
+        if self._junit_path:
+            classpath += ':{}'.format(self._junit_path)
+        classpath += ':.'
+        return classpath
+
     def _junit(self, test_class, prod_class):
-        # TODO pass in hamcrest and junit paths
-        classpath = os.getenv('CLASSPATH') + ':{!s}:{!s}:.'.format(
-            test_class.parent, prod_class.parent)
+        classpath = self._generate_classpath(test_class, prod_class)
         test_class_name = test_class.name[:-len(
             test_class.suffix)]  # remove .java
         command = "java -cp {} org.junit.runner.JUnitCore {}".format(
@@ -207,8 +228,7 @@ class JunitTestsHook:
 
     @plug.hookimpl
     def parse_args(self, args: argparse.Namespace) -> None:
-        """Get the option stored in the ``--ignore`` option added by
-        :py:func:`clone_parser_hook`.
+        """Get command line arguments.
 
         Args:
             args: The full namespace returned by
@@ -216,7 +236,9 @@ class JunitTestsHook:
         """
         self._master_repo_names = args.master_repo_names
         self._reference_tests_dir = pathlib.Path(args.reference_tests_dir)
-        self._ignore_tests = args.ignore_tests if args.ignore_tests else []
+        self._ignore_tests = args.ignore_tests if args.ignore_tests else self._ignore_tests
+        self._hamcrest_path = args.hamcrest_path if args.hamcrest_path else self._hamcrest_path
+        self._junit_path = args.junit_path if args.junit_path else self._junit_path
 
     @plug.hookimpl
     def clone_parser_hook(self,
@@ -237,7 +259,39 @@ class JunitTestsHook:
         clone_parser.add_argument(
             '-i',
             '--ignore-tests',
-            help="Names of test classes to ignore",
+            help="Names of test classes to ignore.",
             type=str,
             nargs='+',
         )
+
+        clone_parser.add_argument(
+            '-ham',
+            '--hamcrest-path',
+            help="Absolute path to the `{}` library.".format(HAMCREST_JAR),
+            type=str,
+            # required if not picked up in config_hook nor on classpath
+            required=not self._hamcrest_path
+            and not HAMCREST_JAR in self._classpath,
+        )
+
+        clone_parser.add_argument(
+            '-junit',
+            '--junit-path',
+            help="Absolute path to the `{}` library.".format(JUNIT_JAR),
+            type=str,
+            # required if not picked up in config_hook nor on classpath
+            required=not self._junit_path and not JUNIT_JAR in self._classpath,
+        )
+
+    @plug.hookimpl
+    def config_hook(self, config_parser: configparser.ConfigParser) -> None:
+        """Look for hamcrest and junit paths in the config, and get the classpath.
+        
+        Args:
+            config: the config parser after config has been read.
+        """
+        self._hamcrest_path = config_parser.get(
+            SECTION, 'hamcrest_path', fallback=self._hamcrest_path)
+        self._junit_path = config_parser.get(
+            SECTION, 'junit_path', fallback=self._junit_path)
+        self._classpath = os.getenv('CLASSPATH') or ''
