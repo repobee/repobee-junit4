@@ -1,4 +1,5 @@
 colored
+codecov
 daiquiri
 repomate-plug
 pytest
