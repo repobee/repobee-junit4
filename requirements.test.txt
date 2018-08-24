@@ -1,0 +1,6 @@
+colored
+daiquiri
+repomate-plug
+pytest
+pytest-cov
+pytest-mock
