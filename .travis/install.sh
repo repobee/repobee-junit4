@@ -15,6 +15,9 @@ wget https://download.java.net/java/GA/jdk10/10/binaries/openjdk-10_linux-x64_bi
 tar -xzf openjdk-10_linux-x64_bin.tar.gz
 export JAVA_HOME=$(pwd)/jdk-10
 
+alias java="$(pwd)/jdk-10/bin/java"
+alias javac="$(pwd)/jdk-10/bin/javac"
+
 wget http://central.maven.org/maven2/junit/junit/4.12/junit-4.12.jar
 wget http://central.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
 
