@@ -44,14 +44,14 @@ def get_num_failed(test_output):
 
 
 @plug.Plugin
-class JunitTestsHook:
+class JUnit4Hooks:
     def __init__(self):
         self._master_repo_names = []
         self._reference_tests_dir = None
         self._ignore_tests = []
         self._hamcrest_path = ''
         self._junit_path = ''
-        self._classpath = None
+        self._classpath = ''
 
     @plug.hookimpl
     def act_on_cloned_repo(self,
@@ -67,9 +67,15 @@ class JunitTestsHook:
         Returns:
             a plug.HookResult specifying the outcome.
         """
+        # TODO this method is a bit... long
         assert self._master_repo_names
         assert self._reference_tests_dir
         path = pathlib.Path(path)
+        if not path.exists():
+            return plug.HookResult(
+                SECTION, plug.ERROR,
+                'student repo {!s} does not exist'.format(path))
+
         java_files = list(path.rglob('*.java'))
 
         matches = list(filter(path.name.endswith, self._master_repo_names))
@@ -83,8 +89,8 @@ class JunitTestsHook:
                         ', '.join(matches))
             return plug.HookResult(SECTION, plug.ERROR, msg)
 
-        test_dir = (self._reference_tests_dir / master_name)
-        if not test_dir.exists():
+        test_dir = pathlib.Path(self._reference_tests_dir) / master_name
+        if not (test_dir.exists() and test_dir.is_dir()):
             return plug.HookResult(
                 SECTION, plug.ERROR,
                 'no reference test directory for {} in {}'.format(
@@ -146,7 +152,7 @@ class JunitTestsHook:
                 else:
                     succeeded.append((test_class, prod_class_path))
             except IndexError as exc:
-                failed.append((plug.WARNING,
+                failed.append((plug.ERROR,
                                'no production class found for {}'.format(
                                    test_class.name)))
 
@@ -235,7 +241,7 @@ class JunitTestsHook:
             :py:func:`argparse.ArgumentParser.parse_args`
         """
         self._master_repo_names = args.master_repo_names
-        self._reference_tests_dir = pathlib.Path(args.reference_tests_dir)
+        self._reference_tests_dir = args.reference_tests_dir
         self._ignore_tests = args.ignore_tests if args.ignore_tests else self._ignore_tests
         self._hamcrest_path = args.hamcrest_path if args.hamcrest_path else self._hamcrest_path
         self._junit_path = args.junit_path if args.junit_path else self._junit_path
