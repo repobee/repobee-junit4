@@ -7,10 +7,10 @@ test_requirements = [
     'appdirs', 'daiquiri', 'pytest>=3.1.1', 'pytest-cov>=2.5.1', 'pytest-mock',
     'codecov'
 ]
-required = ['repomate-plugin']
+required = ['repomate-plug']
 
 setup(
-    name='repomate-junit',
+    name='repomate-junit4',
     version='0.1.0',
     description=(
         'A CLI tool for managing large amounts of GitHub repositories'),
@@ -18,8 +18,8 @@ setup(
     long_description_content_type='text/markdown',
     author='Simon Larsén',
     author_email='slarse@kth.se',
-    #url='https://github.com/slarse/repomate-junit',
-    #download_url='https://github.com/slarse/repomate-junit/archive/v0.1.1.tar.gz',
+    #url='https://github.com/slarse/repomate-junit4',
+    #download_url='https://github.com/slarse/repomate-junit4/archive/v0.1.1.tar.gz',
     license='MIT',
     packages=find_packages(exclude=('tests', 'docs')),
     tests_require=test_requirements,
