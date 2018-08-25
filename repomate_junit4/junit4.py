@@ -58,7 +58,7 @@ def get_num_failed(test_output: bytes) -> int:
 class JUnit4Hooks:
     def __init__(self):
         self._master_repo_names = []
-        self._reference_tests_dir = None
+        self._reference_tests_dir = ''
         self._ignore_tests = []
         self._hamcrest_path = ''
         self._junit_path = ''
@@ -127,7 +127,7 @@ class JUnit4Hooks:
             '--reference-tests-dir',
             help="Path to a directory with reference tests.",
             type=str,
-            required=True,
+            required=not self._reference_tests_dir,
         )
 
         clone_parser.add_argument(
@@ -168,6 +168,8 @@ class JUnit4Hooks:
             SECTION, 'hamcrest_path', fallback=self._hamcrest_path)
         self._junit_path = config_parser.get(
             SECTION, 'junit_path', fallback=self._junit_path)
+        self._reference_tests_dir = config_parser.get(
+            SECTION, 'reference_tests_dir', fallback=self._reference_tests_dir)
         self._classpath = os.getenv('CLASSPATH') or ''
 
     def _compile_all(self, path: pathlib.Path

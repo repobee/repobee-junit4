@@ -80,7 +80,9 @@ def full_args():
 def full_config_parser():
     parser = ConfigParser()
     parser[junit4.SECTION] = dict(
-        hamcrest_path=HAMCREST_PATH, junit_path=JUNIT_PATH)
+        hamcrest_path=HAMCREST_PATH,
+        junit_path=JUNIT_PATH,
+        reference_tests_dir=RTD)
     return parser
 
 
@@ -258,12 +260,14 @@ class TestParseArgs:
         junit4_hooks._ignore_tests = "this isn't even a list"
         junit4_hooks._hamcrest_path = 'wrong/path'
         junit4_hooks._junit_path = 'also/wrong/path'
+        junit4_hooks._reference_tests_dir = 'some/cray/dir'
 
         junit4_hooks.parse_args(full_args)
 
         assert junit4_hooks._ignore_tests == IGNORE_TESTS
         assert junit4_hooks._hamcrest_path == HAMCREST_PATH
         assert junit4_hooks._junit_path == JUNIT_PATH
+        assert junit4_hooks._reference_tests_dir == RTD
 
     def test_defaults_are_kept_if_not_specified_in_args(
             self, junit4_hooks, full_args):
@@ -329,15 +333,20 @@ class TestCloneParserHook:
         assert args.hamcrest_path == HAMCREST_PATH
         assert args.junit_path == JUNIT_PATH
 
-    @pytest.mark.parametrize('arg_name, value', [('-ham', HAMCREST_PATH),
-                                                 ('-junit', JUNIT_PATH)])
-    def test_hamcrest_and_junit_required_if_undefined(self, junit4_hooks,
-                                                      arg_name, value):
-        """Test that junit and hamcrest args are required if they are not
-        defined in either config or classpath.
+    @pytest.mark.parametrize('skip_arg', ['ham', 'junit', 'rtd'])
+    def test_args_required_if_undefined(self, junit4_hooks, skip_arg):
+        """Test that junit, hamcrest and rtd args are required if they are not
+        defined in either config or classpath (for hamcrest and junit).
         """
         parser = ArgumentParser()
-        sys_args = ['-rtd', RTD, '-i', ' '.join(IGNORE_TESTS), arg_name, value]
+        sys_args = ['-i', ' '.join(IGNORE_TESTS)]
+
+        if skip_arg != 'ham':
+            sys_args.extend(['-ham', HAMCREST_PATH])
+        if skip_arg != 'junit':
+            sys_args.extend(['-junit', JUNIT_PATH])
+        if skip_arg != 'rtd':
+            sys_args.extend(['-rtd', RTD])
 
         junit4_hooks.clone_parser_hook(parser)
 
@@ -359,3 +368,15 @@ class TestCloneParserHook:
         # this is the actual test
         junit4_hooks.clone_parser_hook(arg_parser)
         arg_parser.parse_args(sys_args)  # should not crash!
+
+    def test_args_not_required_if_in_config(self, junit4_hooks,
+                                            full_config_parser):
+        """Test that junit, hamcrest and rtd args are not required if they are
+        in the config.
+        """
+        args = Args(master_repo_names=MASTER_REPO_NAMES)
+        junit4_hooks.config_hook(full_config_parser)
+        parser = ArgumentParser()
+        junit4_hooks.clone_parser_hook(parser)
+
+        parser.parse_args([]) # should not crash
