@@ -169,12 +169,17 @@ class JUnit4Hooks:
                 succeeded.append((status, msg))
         return succeeded, failed
 
-    def _generate_classpath(self, test_class: pathlib.Path,
-                            prod_class: pathlib.Path):
+    def _generate_classpath(self, *java_files: pathlib.Path):
+        """
+        Args:
+            java_files: One or more paths to java files.
+        """
         warn = ('`{}` is not configured and not on the CLASSPATH variable.'
                 'This will probably crash.')
-        classpath = "{}:{!s}:{!s}".format(self._classpath, test_class.parent,
-                                          prod_class.parent)
+        classpath = self._classpath
+        for file in java_files:
+            classpath += ":{.parent!s}".format(file)
+
         if not (self._hamcrest_path or HAMCREST_JAR in classpath):
             LOGGER.warning(warn.format(HAMCREST_JAR))
         if not (self._junit_path or JUNIT_JAR in classpath):
@@ -218,7 +223,8 @@ class JUnit4Hooks:
             (status, msg), where status is e.g. :py:const:`plug.ERROR` and
             the message describes the outcome in plain text.
         """
-        command = 'javac {}'.format(' '.join(
+        classpath = self._generate_classpath()
+        command = 'javac -cp {} {}'.format(classpath,' '.join(
             [str(f) for f in java_files])).split()
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
