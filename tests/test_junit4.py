@@ -189,6 +189,8 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(NO_TESTS_REPO)
 
+        LOGGER.info(result.msg)
+
         assert result.status == plug.WARNING
         assert "no files ending in `Test.java` found" in result.msg
 
