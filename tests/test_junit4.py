@@ -43,12 +43,12 @@ NO_MASTER_MATCH_REPO = REPO_DIR / 'some-student-week-nope'
 COMPILE_ERROR_REPO = REPO_DIR / 'compile-error-week-10'
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
-assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist" 
+assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_TEST_DIR_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_TESTS_REPO.exists(), "test pre-requisite error, dir must exist"
-assert NO_MASTER_MATCH_REPO.exists(), "test pre-requisite error, dir must exist"
+assert NO_MASTER_MATCH_REPO.exists(
+), "test pre-requisite error, dir must exist"
 assert COMPILE_ERROR_REPO.exists(), "test pre-requisite error, dir must exist"
-
 
 RTD = str(CUR_DIR / 'reference-tests')
 JUNIT_PATH = str(pytest.constants.JUNIT_PATH)
@@ -189,7 +189,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(NO_TESTS_REPO)
 
-        LOGGER.info(result.msg)
+        print(result.msg)
 
         assert result.status == plug.WARNING
         assert "no files ending in `Test.java` found" in result.msg
@@ -234,9 +234,7 @@ class TestActOnClonedRepo:
         result = hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
 
         assert result.status == plug.ERROR
-        assert 'error: illegal start of type' in  result.msg
-
-
+        assert 'error: illegal start of type' in result.msg
 
 
 class TestParseArgs:
