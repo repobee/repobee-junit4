@@ -4,6 +4,10 @@ language: python
 #  only:
 #  - master
 
+env:
+    - REPOMATE_JUNIT4_HAMCREST="hamcrest-core-1.3.jar"
+    - REPOMATE_JUNIT4_JUNIT="junit-4.12.jar"
+
 matrix:
   include:
 #   - os: linux
