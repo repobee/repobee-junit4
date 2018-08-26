@@ -27,7 +27,8 @@ from typing import Union, Iterable, Tuple, List
 import daiquiri
 from colored import bg, style
 
-from repomate_plug import plug
+import repomate_plug as plug
+from repomate_plug import Status
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -54,8 +55,7 @@ def get_num_failed(test_output: bytes) -> int:
     return int(match.group(1))
 
 
-@plug.Plugin
-class JUnit4Hooks:
+class JUnit4Hooks(plug.Plugin):
     def __init__(self):
         self._master_repo_names = []
         self._reference_tests_dir = ''
@@ -64,7 +64,6 @@ class JUnit4Hooks:
         self._junit_path = ''
         self._classpath = ''
 
-    @plug.hookimpl
     def act_on_cloned_repo(self,
                            path: Union[str, pathlib.Path]) -> plug.HookResult:
         """Look for production classes in the student repo corresponding to
@@ -86,7 +85,7 @@ class JUnit4Hooks:
             path = pathlib.Path(path)
             if not path.exists():
                 return plug.HookResult(
-                    SECTION, plug.ERROR,
+                    SECTION, Status.ERROR,
                     'student repo {!s} does not exist'.format(path))
 
             compile_succeeded, compile_failed = self._compile_all(path)
@@ -95,12 +94,11 @@ class JUnit4Hooks:
             msg = self._format_results(
                 itertools.chain(tests_succeeded, tests_failed, compile_failed))
 
-            status = plug.ERROR if tests_failed or compile_failed else plug.SUCCESS
+            status = Status.ERROR if tests_failed or compile_failed else Status.SUCCESS
             return plug.HookResult(SECTION, status, msg)
         except _ActException as exc:
             return exc.hook_result
 
-    @plug.hookimpl
     def parse_args(self, args: argparse.Namespace) -> None:
         """Get command line arguments.
 
@@ -114,7 +112,6 @@ class JUnit4Hooks:
         self._hamcrest_path = args.hamcrest_path if args.hamcrest_path else self._hamcrest_path
         self._junit_path = args.junit_path if args.junit_path else self._junit_path
 
-    @plug.hookimpl
     def clone_parser_hook(self,
                           clone_parser: configparser.ConfigParser) -> None:
         """Add reference_tests_dir argument to parser.
@@ -157,7 +154,6 @@ class JUnit4Hooks:
             required=not self._junit_path and not JUNIT_JAR in self._classpath,
         )
 
-    @plug.hookimpl
     def config_hook(self, config_parser: configparser.ConfigParser) -> None:
         """Look for hamcrest and junit paths in the config, and get the classpath.
         
@@ -185,7 +181,7 @@ class JUnit4Hooks:
         test_classes = self._find_test_classes(master_name)
         status, msg = self._javac(java_files)
 
-        if status != plug.SUCCESS:
+        if status != Status.SUCCESS:
             raise _ActException(plug.HookResult(SECTION, status, msg))
 
         compile_succeeded, compile_failed = self._compile(
@@ -211,7 +207,7 @@ class JUnit4Hooks:
                     if not matches else \
                     'multiple master repo names matching student repo: {}'.format(
                         ', '.join(matches))
-            res = plug.HookResult(SECTION, plug.ERROR, msg)
+            res = plug.HookResult(SECTION, Status.ERROR, msg)
             raise _ActException(res)
 
     def _find_test_classes(self, master_name) -> List[pathlib.Path]:
@@ -226,7 +222,7 @@ class JUnit4Hooks:
         test_dir = pathlib.Path(self._reference_tests_dir) / master_name
         if not (test_dir.exists() and test_dir.is_dir()):
             res = plug.HookResult(
-                SECTION, plug.ERROR,
+                SECTION, Status.ERROR,
                 'no reference test directory for {} in {}'.format(
                     master_name, self._reference_tests_dir))
             raise _ActException(res)
@@ -239,7 +235,7 @@ class JUnit4Hooks:
 
         if not test_classes:
             res = plug.HookResult(
-                SECTION, plug.WARNING,
+                SECTION, Status.WARNING,
                 "no files ending in `Test.java` found in {!s}".format(
                     test_dir))
             raise _ActException(res)
@@ -255,9 +251,9 @@ class JUnit4Hooks:
             a formatted string
         """
         backgrounds = {
-            plug.ERROR: bg('red'),
-            plug.WARNING: bg('yellow'),
-            plug.SUCCESS: bg('dark_green'),
+            Status.ERROR: bg('red'),
+            Status.WARNING: bg('yellow'),
+            Status.SUCCESS: bg('dark_green'),
         }
         test_result_string = lambda status, msg: "{}{}:{} {}".format(backgrounds[status], status, style.RESET, msg)
         return os.linesep.join([
@@ -295,14 +291,14 @@ class JUnit4Hooks:
                     if file.name != test_class.name
                 ]
                 status, msg = self._javac([*adjacent_java_files, test_class])
-                if status != plug.SUCCESS:
+                if status != Status.SUCCESS:
                     failed.append(plug.HookResult(SECTION, status, msg))
                 else:
                     succeeded.append((test_class, prod_class_path))
             except IndexError as exc:
                 failed.append(
                     plug.HookResult(
-                        SECTION, plug.ERROR,
+                        SECTION, Status.ERROR,
                         'no production class found for {}'.format(
                             test_class.name)))
 
@@ -324,7 +320,7 @@ class JUnit4Hooks:
         failed = []
         for test_class, prod_class in test_prod_class_pairs:
             status, msg = self._junit(test_class, prod_class)
-            if status != plug.SUCCESS:
+            if status != Status.SUCCESS:
                 failed.append(plug.HookResult(SECTION, status, msg))
             else:
                 succeeded.append(plug.HookResult(SECTION, status, msg))
@@ -366,12 +362,12 @@ class JUnit4Hooks:
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if proc.returncode != 0:
-            status = plug.ERROR
+            status = Status.ERROR
             msg = "Test class {} failed {} tests".format(
                 test_class_name, get_num_failed(proc.stdout))
         else:
             msg = "Test class {} passed!".format(test_class_name)
-            status = plug.SUCCESS
+            status = Status.SUCCESS
 
         return status, msg
 
@@ -383,7 +379,7 @@ class JUnit4Hooks:
         Args:
             java_files: paths to ``.java`` files.
         Returns:
-            (status, msg), where status is e.g. :py:const:`plug.ERROR` and
+            (status, msg), where status is e.g. :py:const:`Status.ERROR` and
             the message describes the outcome in plain text.
         """
         classpath = self._generate_classpath()
@@ -393,10 +389,10 @@ class JUnit4Hooks:
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if proc.returncode != 0:
-            status = plug.ERROR
+            status = Status.ERROR
             msg = proc.stderr.decode(sys.getdefaultencoding())
         else:
             msg = "all files compiled successfully"
-            status = plug.SUCCESS
+            status = Status.SUCCESS
 
         return status, msg

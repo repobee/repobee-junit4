@@ -22,7 +22,8 @@ from argparse import ArgumentParser
 
 import pytest
 
-from repomate_plug import plug
+import repomate_plug as plug
+from repomate_plug import Status
 from repomate_junit4 import junit4
 
 # args that are relevant for junit4
@@ -137,7 +138,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(SUCCESS_REPO)
 
-        assert result.status == plug.SUCCESS
+        assert result.status == Status.SUCCESS
         assert "Test class FiboTest passed!" in result.msg
 
     def test_fail_repo(self):
@@ -146,7 +147,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert "Test class PrimeCheckerTest failed 1 tests" in result.msg
 
     def test_no_reference_tests_dir(self):
@@ -159,7 +160,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(SUCCESS_REPO)
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert "no reference test directory" in result.msg
 
     def test_reference_test_dir_is_file(self):
@@ -168,7 +169,7 @@ class TestActOnClonedRepo:
             hooks = self.setup_hooks(reference_tests_dir=file.name)
             result = hooks.act_on_cloned_repo(SUCCESS_REPO)
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert "no reference test directory" in result.msg
 
     def test_reference_test_dir_has_no_subdir_for_repo(self):
@@ -179,7 +180,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(NO_TEST_DIR_REPO)
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert "no reference test directory for" in result.msg
 
     def test_no_tests_for_repo(self):
@@ -193,7 +194,7 @@ class TestActOnClonedRepo:
 
         print(result.msg)
 
-        assert result.status == plug.WARNING
+        assert result.status == Status.WARNING
         assert "no files ending in `Test.java` found" in result.msg
 
     def test_error_result_when_no_master_repo_match(self, hooks):
@@ -203,7 +204,7 @@ class TestActOnClonedRepo:
         """
         result = hooks.act_on_cloned_repo(NO_MASTER_MATCH_REPO)
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert "no master repo name matching" in result.msg
 
     def test_error_result_when_path_does_not_exist(self, hooks):
@@ -213,7 +214,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(dirname)
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert "student repo {} does not exist".format(dirname) in result.msg
 
     def test_error_result_when_prod_class_missing(self, hooks):
@@ -229,13 +230,13 @@ class TestActOnClonedRepo:
 
             result = hooks.act_on_cloned_repo(target)
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert 'no production class found for PrimeCheckerTest' in result.msg
 
     def test_error_result_on_compile_error(self, hooks):
         result = hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
 
-        assert result.status == plug.ERROR
+        assert result.status == Status.ERROR
         assert 'error: illegal start of type' in result.msg
 
 
@@ -379,4 +380,4 @@ class TestCloneParserHook:
         parser = ArgumentParser()
         junit4_hooks.clone_parser_hook(parser)
 
-        parser.parse_args([]) # should not crash
+        parser.parse_args([])  # should not crash
