@@ -12,14 +12,13 @@ required = ['repomate-plug', 'daiquiri', 'colored']
 setup(
     name='repomate-junit4',
     version='0.1.0',
-    description=(
-        'A CLI tool for managing large amounts of GitHub repositories'),
+    description='JUnit-4.12 plugin for repomate',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Simon Larsén',
     author_email='slarse@kth.se',
-    #url='https://github.com/slarse/repomate-junit4',
-    #download_url='https://github.com/slarse/repomate-junit4/archive/v0.1.0.tar.gz',
+    url='https://github.com/slarse/repomate-junit4',
+    download_url='https://github.com/slarse/repomate-junit4/archive/v0.1.0.tar.gz',
     license='MIT',
     packages=find_packages(exclude=('tests', 'docs')),
     tests_require=test_requirements,
