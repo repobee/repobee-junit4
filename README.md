@@ -2,6 +2,30 @@
 This is a plugin for [repomate](https://github.com/slarse/repomate) that runs
 JUnit4 test classes on production classes in a cloned student repo.
 
+## Requirements
+`repomate-junit4` has a few non-Python dependencies.
+
+1. `java` must ba available from the command line.
+2. `javac` must be available from the command line.
+    - In other words, install a `JDK` version that is compatible with the files
+    you intend to test!
+3. `junit-4.12.jar` must be available on the `CLASSPATH` variable, or configured
+    (see [Added CLI arguments](#added-cli-arguments) and
+    [Configuration file](#configuration-file)).
+4. `hamcrest-core-1.3.jar` must be available on the `CLASSPATH` variable or
+   configured in order to make use of `hamcrest` matchers.
+
+> **Note:** `hamcrest-core-1.3.jar` will be removed as a strict dependency in
+> the next release, as it is technically not required to run JUnit4 test
+> classes.
+
+The `hamcrest` and `junit` jars ar available from Maven Central:
+
+```bash
+wget http://central.maven.org/maven2/junit/junit/4.12/junit-4.12.jar
+wget http://central.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
+```
+
 ## Install
 The recommended way to install `repomate-junit4` is with `pip`.
 
@@ -44,12 +68,12 @@ these definitions.
 * `-rtd|--reference-tests-dir`
     - Path to the RTD.
     - **Required** unless specified in the configuration file.
-* `-ham|--hamcrest-path`
-    - Path to the `hamcrest-core-1.3.jar` library.
-    - **Required** unless specified on the `CLASSPATH` variable, or in the
-      configuration file.
 * `-junit|--junit-path`
     - Path to the `junit-4.12.jar` library.
+    - **Required** unless specified on the `CLASSPATH` variable, or in the
+      configuration file.
+* `-ham|--hamcrest-path`
+    - Path to the `hamcrest-core-1.3.jar` library.
     - **Required** unless specified on the `CLASSPATH` variable, or in the
       configuration file.
 * `-i|--ignore-tests`
