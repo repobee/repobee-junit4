@@ -119,7 +119,7 @@ class TestActOnClonedRepo:
                     classpath=CLASSPATH,
                     hamcrest_path=HAMCREST_PATH,
                     junit_path=JUNIT_PATH):
-        hooks = junit4_hooks()
+        hooks = junit4.JUnit4Hooks()
         hooks._reference_tests_dir = reference_tests_dir
         hooks._master_repo_names = master_repo_names
         hooks._ignore_tests = ignore_tests
@@ -132,19 +132,15 @@ class TestActOnClonedRepo:
     def hooks(self):
         return self.setup_hooks()
 
-    def test_correct_repo(self):
+    def test_correct_repo(self, hooks):
         """Test with repo that should not have test failures."""
-        hooks = self.setup_hooks()
-
         result = hooks.act_on_cloned_repo(SUCCESS_REPO)
 
         assert result.status == Status.SUCCESS
         assert "Test class FiboTest passed!" in result.msg
 
-    def test_fail_repo(self):
+    def test_fail_repo(self, hooks):
         """Test with repo that should have test failures."""
-        hooks = self.setup_hooks()
-
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 
         assert result.status == Status.ERROR
@@ -172,27 +168,21 @@ class TestActOnClonedRepo:
         assert result.status == Status.ERROR
         assert "no reference test directory" in result.msg
 
-    def test_reference_test_dir_has_no_subdir_for_repo(self):
+    def test_reference_test_dir_has_no_subdir_for_repo(self, hooks):
         """Test that a warning is returned when the reference test directory
         has no corresponding subdirectory for the specified repo.
         """
-        hooks = self.setup_hooks()
-
         result = hooks.act_on_cloned_repo(NO_TEST_DIR_REPO)
 
         assert result.status == Status.ERROR
         assert "no reference test directory for" in result.msg
 
-    def test_no_tests_for_repo(self):
+    def test_no_tests_for_repo(self, hooks):
         """Test that a warning is returned when the reference test directory
         has a corresponeding subdirectory for the repo, but there are no
         test files in it.
         """
-        hooks = self.setup_hooks()
-
         result = hooks.act_on_cloned_repo(NO_TESTS_REPO)
-
-        print(result.msg)
 
         assert result.status == Status.WARNING
         assert "no files ending in `Test.java` found" in result.msg
@@ -381,3 +371,8 @@ class TestCloneParserHook:
         junit4_hooks.clone_parser_hook(parser)
 
         parser.parse_args([])  # should not crash
+
+
+def test_register():
+    """Just test that there is no crash"""
+    plug.manager.register(junit4)
