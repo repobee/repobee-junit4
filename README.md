@@ -23,10 +23,6 @@ JUnit4 test classes on production classes in a cloned student repo.
 4. `hamcrest-core-1.3.jar` must be available on the `CLASSPATH` variable or
    configured in order to make use of `hamcrest` matchers.
 
-> **Note:** `hamcrest-core-1.3.jar` will be removed as a strict dependency in
-> the next release, as it is technically not required to run JUnit4 test
-> classes.
-
 The `hamcrest` and `junit` jars ar available from Maven Central:
 
 ```bash
