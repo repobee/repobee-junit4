@@ -78,8 +78,6 @@ class JUnit4Hooks(plug.Plugin):
         Returns:
             a plug.HookResult specifying the outcome.
         """
-        # TODO this method is a bit... long
-        LOGGER.warning(self._reference_tests_dir)
         assert self._master_repo_names
         assert self._reference_tests_dir
         try:
