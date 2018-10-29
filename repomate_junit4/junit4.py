@@ -79,6 +79,7 @@ class JUnit4Hooks(plug.Plugin):
             a plug.HookResult specifying the outcome.
         """
         # TODO this method is a bit... long
+        LOGGER.warning(self._reference_tests_dir)
         assert self._master_repo_names
         assert self._reference_tests_dir
         try:
@@ -107,10 +108,22 @@ class JUnit4Hooks(plug.Plugin):
             :py:func:`argparse.ArgumentParser.parse_args`
         """
         self._master_repo_names = args.master_repo_names
-        self._reference_tests_dir = args.reference_tests_dir
-        self._ignore_tests = args.ignore_tests if args.ignore_tests else self._ignore_tests
-        self._hamcrest_path = args.hamcrest_path if args.hamcrest_path else self._hamcrest_path
-        self._junit_path = args.junit_path if args.junit_path else self._junit_path
+        self._reference_tests_dir =\
+            args.reference_tests_dir\
+            if args.reference_tests_dir\
+            else self._reference_tests_dir
+        self._ignore_tests =\
+            args.ignore_tests\
+            if args.ignore_tests\
+            else self._ignore_tests
+        self._hamcrest_path = \
+            args.hamcrest_path\
+            if args.hamcrest_path\
+            else self._hamcrest_path
+        self._junit_path =\
+            args.junit_path\
+            if args.junit_path\
+            else self._junit_path
 
     def clone_parser_hook(self,
                           clone_parser: configparser.ConfigParser) -> None:
@@ -353,8 +366,8 @@ class JUnit4Hooks(plug.Plugin):
 
     def _junit(self, test_class, prod_class):
         classpath = self._generate_classpath(test_class, prod_class)
-        test_class_name = test_class.name[:-len(
-            test_class.suffix)]  # remove .java
+        test_class_name = test_class.name[:-len(test_class.
+                                                suffix)]  # remove .java
         command = "java -cp {} org.junit.runner.JUnitCore {}".format(
             classpath, test_class_name).split()
 

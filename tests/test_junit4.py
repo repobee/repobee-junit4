@@ -266,20 +266,23 @@ class TestParseArgs:
         args.
         """
         args = Args(
-            master_repo_names=MASTER_REPO_NAMES, reference_tests_dir=RTD)
+            master_repo_names=MASTER_REPO_NAMES)
         expected_ignore_tests = ['some', 'tests']
         expected_hamcrest_path = 'some/path/to/{}'.format(junit4.HAMCREST_JAR)
         expected_junit_path = 'other/path/to/{}'.format(junit4.JUNIT_JAR)
+        expected_rtd = RTD
 
         junit4_hooks._ignore_tests = expected_ignore_tests
         junit4_hooks._hamcrest_path = expected_hamcrest_path
         junit4_hooks._junit_path = expected_junit_path
+        junit4_hooks._reference_tests_dir = expected_rtd
 
         junit4_hooks.parse_args(args)
 
         assert junit4_hooks._ignore_tests == expected_ignore_tests
         assert junit4_hooks._hamcrest_path == expected_hamcrest_path
         assert junit4_hooks._junit_path == expected_junit_path
+        assert junit4_hooks._reference_tests_dir == expected_rtd
 
 
 class TestConfigHook:
@@ -371,6 +374,7 @@ class TestCloneParserHook:
         junit4_hooks.clone_parser_hook(parser)
 
         parser.parse_args([])  # should not crash
+
 
 
 def test_register():
