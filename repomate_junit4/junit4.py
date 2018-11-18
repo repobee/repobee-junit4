@@ -366,9 +366,10 @@ class JUnit4Hooks(plug.Plugin):
         classpath = self._generate_classpath(test_class, prod_class)
         test_class_name = test_class.name[:-len(test_class.
                                                 suffix)]  # remove .java
-        command = "java -cp {} org.junit.runner.JUnitCore {}".format(
-            classpath, test_class_name).split()
-
+        command = [
+            "java", "-cp", classpath, "org.junit.runner.JUnitCore",
+            test_class_name
+        ]
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -394,8 +395,9 @@ class JUnit4Hooks(plug.Plugin):
             the message describes the outcome in plain text.
         """
         classpath = self._generate_classpath()
-        command = 'javac -cp {} {}'.format(
-            classpath, ' '.join([str(f) for f in java_files])).split()
+        command = [
+            "javac", "-cp", classpath, *[str(path) for path in java_files]
+        ]
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

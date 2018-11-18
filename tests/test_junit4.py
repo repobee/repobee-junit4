@@ -42,6 +42,7 @@ NO_TEST_DIR_REPO = REPO_DIR / 'some-student-week-12'
 NO_TESTS_REPO = REPO_DIR / 'best-student-week-13'
 NO_MASTER_MATCH_REPO = REPO_DIR / 'some-student-week-nope'
 COMPILE_ERROR_REPO = REPO_DIR / 'compile-error-week-10'
+DIR_PATHS_WITH_SPACES = REPO_DIR / 'space-week-10'
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -50,6 +51,8 @@ assert NO_TESTS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_MASTER_MATCH_REPO.exists(
 ), "test pre-requisite error, dir must exist"
 assert COMPILE_ERROR_REPO.exists(), "test pre-requisite error, dir must exist"
+assert DIR_PATHS_WITH_SPACES.exists(
+), "test pre-reference error, dir must exit"
 
 RTD = str(CUR_DIR / 'reference-tests')
 JUNIT_PATH = str(pytest.constants.JUNIT_PATH)
@@ -229,6 +232,11 @@ class TestActOnClonedRepo:
         assert result.status == Status.ERROR
         assert 'error: illegal start of type' in result.msg
 
+    def test_runs_correctly_when_paths_include_whitespace(self, hooks):
+        result = hooks.act_on_cloned_repo(DIR_PATHS_WITH_SPACES)
+
+        assert result.status == Status.SUCCESS
+
 
 class TestParseArgs:
     def test_all_args(self, junit4_hooks, full_args):
@@ -265,8 +273,7 @@ class TestParseArgs:
         """Test that defaults are not overwritten if they are falsy in the
         args.
         """
-        args = Args(
-            master_repo_names=MASTER_REPO_NAMES)
+        args = Args(master_repo_names=MASTER_REPO_NAMES)
         expected_ignore_tests = ['some', 'tests']
         expected_hamcrest_path = 'some/path/to/{}'.format(junit4.HAMCREST_JAR)
         expected_junit_path = 'other/path/to/{}'.format(junit4.JUNIT_JAR)
@@ -374,7 +381,6 @@ class TestCloneParserHook:
         junit4_hooks.clone_parser_hook(parser)
 
         parser.parse_args([])  # should not crash
-
 
 
 def test_register():
