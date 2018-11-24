@@ -9,7 +9,7 @@ public class PrimeChecker {
      * This method is buggy on purpose (don't fix it!)
      */
     public static boolean isPrime(int n) {
-        for (int i = 3; i <= Math.sqrt(n); i += 2) {
+        for (int i = 3; i < Math.sqrt(n); i += 2) {
             if (n % i == 0) {
                 return false;
             }

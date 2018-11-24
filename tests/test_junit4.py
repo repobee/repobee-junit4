@@ -27,8 +27,9 @@ from repomate_plug import Status
 from repomate_junit4 import junit4
 
 # args that are relevant for junit4
-Args = namedtuple('Args', ('master_repo_names', 'reference_tests_dir',
-                           'ignore_tests', 'hamcrest_path', 'junit_path'))
+Args = namedtuple('Args',
+                  ('master_repo_names', 'reference_tests_dir', 'ignore_tests',
+                   'hamcrest_path', 'junit_path', 'verbose'))
 Args.__new__.__defaults__ = (None, ) * len(Args._fields)
 
 CUR_DIR = pathlib.Path(__file__).parent
@@ -77,6 +78,7 @@ def full_args():
         ignore_tests=IGNORE_TESTS,
         hamcrest_path=HAMCREST_PATH,
         junit_path=JUNIT_PATH,
+        verbose=False,
     )
 
 
@@ -121,7 +123,8 @@ class TestActOnClonedRepo:
                     ignore_tests=[],
                     classpath=CLASSPATH,
                     hamcrest_path=HAMCREST_PATH,
-                    junit_path=JUNIT_PATH):
+                    junit_path=JUNIT_PATH,
+                    verbose=False):
         hooks = junit4.JUnit4Hooks()
         hooks._reference_tests_dir = reference_tests_dir
         hooks._master_repo_names = master_repo_names
@@ -129,6 +132,7 @@ class TestActOnClonedRepo:
         hooks._classpath = classpath
         hooks._hamcrest_path = hamcrest_path
         hooks._junit_path = junit_path
+        hooks._verbose = verbose
         return hooks
 
     @pytest.fixture
@@ -147,7 +151,25 @@ class TestActOnClonedRepo:
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 
         assert result.status == Status.ERROR
-        assert "Test class PrimeCheckerTest failed 1 tests" in result.msg
+        assert "Test class PrimeCheckerTest failed 2 tests" in result.msg
+
+    def test_fail_repo_verbose(self):
+        """Test verbose output on repo that fails tests."""
+        hooks = self.setup_hooks(verbose=True)
+
+        expected_verbose_msg = """1) isPrimeFalseForComposites(PrimeCheckerTest)
+java.lang.AssertionError: 
+Expected: is <false>
+     but: was <true>
+2) oneIsNotPrime(PrimeCheckerTest)
+java.lang.AssertionError: 
+Expected: is <false>
+     but: was <true>"""
+
+        result = hooks.act_on_cloned_repo(FAIL_REPO)
+
+        assert "Test class PrimeCheckerTest failed 2 tests" in result.msg
+        assert expected_verbose_msg in result.msg
 
     def test_no_reference_tests_dir(self):
         """Test with invalid path to reference_tests_dir."""
@@ -315,7 +337,8 @@ class TestConfigHook:
 
 
 class TestCloneParserHook:
-    def test_arguments_get_added(self, junit4_hooks):
+    @pytest.mark.parametrize('verbose', (None, False, True))
+    def test_arguments_get_added(self, junit4_hooks, verbose):
         """Just test that `-rtd`, `-i`, `-ham` and `-junit` get added
         correctly and that the args can then be parsed as expected.
         """
@@ -325,6 +348,9 @@ class TestCloneParserHook:
             '-junit', JUNIT_PATH
         ]
 
+        if verbose:
+            sys_args += ['-v']
+
         junit4_hooks.clone_parser_hook(parser)
 
         args = parser.parse_args(sys_args)
@@ -333,6 +359,7 @@ class TestCloneParserHook:
         assert args.ignore_tests == IGNORE_TESTS
         assert args.hamcrest_path == HAMCREST_PATH
         assert args.junit_path == JUNIT_PATH
+        assert args.verbose == (False if verbose is None else verbose)
 
     @pytest.mark.parametrize('skip_arg', ['ham', 'junit', 'rtd'])
     def test_args_required_if_undefined(self, junit4_hooks, skip_arg):

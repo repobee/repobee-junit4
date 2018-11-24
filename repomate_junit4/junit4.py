@@ -55,6 +55,13 @@ def get_num_failed(test_output: bytes) -> int:
     return int(match.group(1))
 
 
+def parse_failed_tests(test_output: bytes) -> str:
+    """Return a list of test failure descriptions, excluding stack traces."""
+    decoded = test_output.decode(encoding=sys.getdefaultencoding())
+    return re.findall(
+        r'^\d\) .*(?:\n(?!\s+at).*)*', decoded, flags=re.MULTILINE)
+
+
 class JUnit4Hooks(plug.Plugin):
     def __init__(self):
         self._master_repo_names = []
@@ -122,6 +129,7 @@ class JUnit4Hooks(plug.Plugin):
             args.junit_path\
             if args.junit_path\
             else self._junit_path
+        self._verbose = args.verbose
 
     def clone_parser_hook(self,
                           clone_parser: configparser.ConfigParser) -> None:
@@ -165,9 +173,16 @@ class JUnit4Hooks(plug.Plugin):
             required=not self._junit_path and not JUNIT_JAR in self._classpath,
         )
 
+        clone_parser.add_argument(
+            '-v',
+            '--verbose',
+            help="Display more information about test failures.",
+            action="store_true",
+        )
+
     def config_hook(self, config_parser: configparser.ConfigParser) -> None:
         """Look for hamcrest and junit paths in the config, and get the classpath.
-        
+
         Args:
             config: the config parser after config has been read.
         """
@@ -182,7 +197,7 @@ class JUnit4Hooks(plug.Plugin):
     def _compile_all(self, path: pathlib.Path
                      ) -> Tuple[List[ResultPair], List[plug.HookResult]]:
         """Attempt to compile all java files in the repo.
-        
+
         Returns:
             a tuple of lists ``(succeeded, failed)``, where ``succeeded``
             are tuples on the form ``(test_class, prod_class)`` paths.
@@ -377,6 +392,9 @@ class JUnit4Hooks(plug.Plugin):
             status = Status.ERROR
             msg = "Test class {} failed {} tests".format(
                 test_class_name, get_num_failed(proc.stdout))
+            if self._verbose:
+                msg += os.linesep + os.linesep.join(
+                    parse_failed_tests(proc.stdout))
         else:
             msg = "Test class {} passed!".format(test_class_name)
             status = Status.SUCCESS
