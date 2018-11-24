@@ -84,6 +84,8 @@ these definitions.
     - A whitespace separated list of test files (e.g. `LinkedListTest.java`) to
     ignore. This is useful for example if there are abstract test classes in
     the test dir.
+* `-v|--verbose`
+    - Display more verbose information (currently only concerns test failures).
 
 ### Configuration file
 First and foremost, `junit4` must be added to the `plugins` option under the
