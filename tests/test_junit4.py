@@ -45,7 +45,7 @@ Args.__new__.__defaults__ = (None,) * len(Args._fields)
 CUR_DIR = pathlib.Path(__file__).parent
 REPO_DIR = CUR_DIR / "repos"
 
-MASTER_REPO_NAMES = ("week-10", "week-11", "week-12", "week-13")
+MASTER_REPO_NAMES = ("week-10", "week-11", "week-12", "week-13", "week-14")
 
 SUCCESS_REPO = REPO_DIR / "some-student-week-10"
 FAIL_REPO = REPO_DIR / "other-student-week-11"
@@ -54,6 +54,7 @@ NO_TESTS_REPO = REPO_DIR / "best-student-week-13"
 NO_MASTER_MATCH_REPO = REPO_DIR / "some-student-week-nope"
 COMPILE_ERROR_REPO = REPO_DIR / "compile-error-week-10"
 DIR_PATHS_WITH_SPACES = REPO_DIR / "space-week-10"
+ABSTRACT_TEST_REPO = REPO_DIR / "student-week-14"
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -62,6 +63,7 @@ assert NO_TESTS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_MASTER_MATCH_REPO.exists(), "test pre-requisite error, dir must exist"
 assert COMPILE_ERROR_REPO.exists(), "test pre-requisite error, dir must exist"
 assert DIR_PATHS_WITH_SPACES.exists(), "test pre-reference error, dir must exit"
+assert ABSTRACT_TEST_REPO.exists(), "test pre-reference error, dir must exit"
 
 JUNIT_PATH = str(envvars.JUNIT_PATH)
 HAMCREST_PATH = str(envvars.HAMCREST_PATH)
@@ -119,8 +121,7 @@ class TestActOnClonedRepo:
 
     .. warning::
 
-        These tests run slow!
-
+        Integration tests, slow running!
     """
 
     def setup_hooks(
@@ -147,6 +148,15 @@ class TestActOnClonedRepo:
     @pytest.fixture
     def hooks(self):
         return self.setup_hooks()
+
+    def test_with_abstract_test_class(self, hooks):
+        """Test running the plugin when the reference tests include an abstract test class."""
+        result = hooks.act_on_cloned_repo(ABSTRACT_TEST_REPO)
+
+        print(result.msg)
+
+        assert result.status == Status.SUCCESS
+        assert "Test class PrimeCheckerTest passed!" in result.msg
 
     def test_correct_repo(self, hooks):
         """Test with repo that should not have test failures."""
