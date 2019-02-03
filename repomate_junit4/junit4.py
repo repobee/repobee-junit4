@@ -313,7 +313,11 @@ class JUnit4Hooks(plug.Plugin):
 
         failed = []
         succeeded = []
-        for test_class in test_classes:
+        # only use concrete test classes
+        concrete_test_classes = filter(
+            lambda t: not self._is_abstract_class(t), test_classes
+        )
+        for test_class in concrete_test_classes:
             prod_class_name = test_class.name.replace("Test.java", ".java")
             try:
                 prod_class_path = list(
@@ -322,9 +326,9 @@ class JUnit4Hooks(plug.Plugin):
                 adjacent_java_files = [
                     file
                     for file in prod_class_path.parent.glob("*.java")
-                    if file.name != test_class.name
-                ]
-                status, msg = self._javac([*adjacent_java_files, test_class])
+                    if not file.name.endswith("Test.java")
+                ] + list(test_class.parent.glob("*Test.java"))
+                status, msg = self._javac([*adjacent_java_files])
                 if status != Status.SUCCESS:
                     failed.append(plug.HookResult(SECTION, status, msg))
                 else:
@@ -363,6 +367,17 @@ class JUnit4Hooks(plug.Plugin):
                 succeeded.append(plug.HookResult(SECTION, status, msg))
         return succeeded, failed
 
+    def _is_abstract_class(self, test_class: pathlib.Path) -> bool:
+        """Check if the file is an abstract class."""
+        assert test_class.name.endswith(".java")
+        regex = r"^\s*?(public\s+)?abstract\s+class\s+{}".format(test_class.name[:-5])
+        match = re.search(
+            regex,
+            test_class.read_text(encoding=sys.getdefaultencoding()),
+            flags=re.MULTILINE,
+        )
+        return match is not None
+
     def _generate_classpath(self, *java_files: pathlib.Path) -> str:
         """
         Args:
@@ -391,7 +406,9 @@ class JUnit4Hooks(plug.Plugin):
         return classpath
 
     def _junit(self, test_class, prod_class):
-        classpath = self._generate_classpath(test_class, prod_class)
+        classpath = self._generate_classpath(
+            *test_class.parent.glob("*.java"), prod_class
+        )
         test_class_name = test_class.name[: -len(test_class.suffix)]  # remove .java
         command = [
             "java",
