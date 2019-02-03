@@ -18,7 +18,7 @@ test_requirements = [
     "pytest-mock",
     "codecov",
 ]
-required = ["repomate-plug>=0.4.0", "daiquiri", "colored"]
+required = ["repomate-plug>=0.4.1", "daiquiri", "colored"]
 
 setup(
     name="repomate-junit4",
