@@ -45,7 +45,15 @@ Args.__new__.__defaults__ = (None,) * len(Args._fields)
 CUR_DIR = pathlib.Path(__file__).parent
 REPO_DIR = CUR_DIR / "repos"
 
-MASTER_REPO_NAMES = ("week-10", "week-11", "week-12", "week-13", "week-14")
+MASTER_REPO_NAMES = (
+    "week-10",
+    "week-11",
+    "week-12",
+    "week-13",
+    "week-14",
+    "packaged-code",
+    "multiple-packages",
+)
 
 SUCCESS_REPO = REPO_DIR / "some-student-week-10"
 FAIL_REPO = REPO_DIR / "other-student-week-11"
@@ -55,6 +63,10 @@ NO_MASTER_MATCH_REPO = REPO_DIR / "some-student-week-nope"
 COMPILE_ERROR_REPO = REPO_DIR / "compile-error-week-10"
 DIR_PATHS_WITH_SPACES = REPO_DIR / "space-week-10"
 ABSTRACT_TEST_REPO = REPO_DIR / "student-week-14"
+PACKAGED_CODE_REPO = REPO_DIR / "student-packaged-code"
+DEFAULT_PACKAGED_CODE_REPO = REPO_DIR / "default-packaged-code"
+NO_DIR_STRUCTURE_REPO = REPO_DIR / "no-dir-structure-packaged-code"
+MULTIPLE_PACKAGES_REPO = REPO_DIR / "student-multiple-packages"
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -276,6 +288,30 @@ Expected: is <false>
 
     def test_runs_correctly_when_paths_include_whitespace(self, hooks):
         result = hooks.act_on_cloned_repo(DIR_PATHS_WITH_SPACES)
+
+        assert result.status == Status.SUCCESS
+
+    def test_runs_with_packaged_code(self, hooks):
+        """Test that packaged code is handled correctly."""
+        result = hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
+
+        assert result.status == Status.SUCCESS
+        assert "Test class se.repomate.fibo.FiboTest passed!" in str(result.msg)
+
+    def test_error_when_student_code_is_incorrectly_packaged(self, hooks):
+        """Test that a test class expecting a package errors out when the
+        directory structure in the student repo does not correspond to the
+        package statement in the test class.
+        """
+        result = hooks.act_on_cloned_repo(NO_DIR_STRUCTURE_REPO)
+
+        assert result.status == Status.ERROR
+
+    def test_runs_with_multiple_packages(self, hooks):
+        """Test that a reference test suite with several packages is run
+        correctly.
+        """
+        result = hooks.act_on_cloned_repo(MULTIPLE_PACKAGES_REPO)
 
         assert result.status == Status.SUCCESS
 
