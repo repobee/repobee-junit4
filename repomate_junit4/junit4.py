@@ -318,11 +318,15 @@ class JUnit4Hooks(plug.Plugin):
             lambda t: not self._is_abstract_class(t), test_classes
         )
         for test_class in concrete_test_classes:
+            package = _extract_package(test_class)
             prod_class_name = test_class.name.replace("Test.java", ".java")
             try:
-                prod_class_path = list(
-                    filter(lambda file: file.name == prod_class_name, java_files)
-                )[0]
+                prod_class_path = [
+                    file
+                    for file in java_files
+                    if file.name == prod_class_name
+                    and _extract_package(file) == package
+                ][0]
                 adjacent_java_files = [
                     file
                     for file in prod_class_path.parent.glob("*.java")
@@ -338,7 +342,8 @@ class JUnit4Hooks(plug.Plugin):
                     plug.HookResult(
                         SECTION,
                         Status.ERROR,
-                        "no production class found for {}".format(test_class.name),
+                        "no production class found for "
+                        + _fqn(package, test_class.name),
                     )
                 )
 
@@ -378,10 +383,10 @@ class JUnit4Hooks(plug.Plugin):
         )
         return match is not None
 
-    def _generate_classpath(self, *java_files: pathlib.Path) -> str:
+    def _generate_classpath(self, *paths: pathlib.Path) -> str:
         """
         Args:
-            java_files: One or more paths to java files.
+            paths: One or more paths to add to the classpath.
         Returns:
             a formated classpath to be used with ``java`` and ``javac``
         """
@@ -390,8 +395,8 @@ class JUnit4Hooks(plug.Plugin):
             "This will probably crash."
         )
         classpath = self._classpath
-        for file in java_files:
-            classpath += ":{.parent!s}".format(file)
+        for path in paths:
+            classpath += ":{!s}".format(path)
 
         if not (self._hamcrest_path or HAMCREST_JAR in classpath):
             LOGGER.warning(warn.format(HAMCREST_JAR))
@@ -405,11 +410,33 @@ class JUnit4Hooks(plug.Plugin):
         classpath += ":."
         return classpath
 
+    @staticmethod
+    def _extract_valid_package(test_class, prod_class):
+        """Extract a package name from the test and production class.
+        Raise if the test class and production class have different package
+        statements.
+        """
+        test_package = _extract_package(test_class)
+        prod_package = _extract_package(prod_class)
+
+        if test_package != prod_package:
+            msg = (
+                "Test class {} in package {}, but production class {} in package {}"
+            ).format(test_class.name, test_package, prod_class.name, prod_package)
+            raise _ActException(plug.HookResult(SECTION, Status.ERROR, msg))
+
+        return test_package
+
     def _junit(self, test_class, prod_class):
-        classpath = self._generate_classpath(
-            *test_class.parent.glob("*.java"), prod_class
-        )
+        package = self._extract_valid_package(test_class, prod_class)
+
+        prod_class_dir = _package_root(prod_class, package)
+        test_class_dir = _package_root(test_class, package)
+
         test_class_name = test_class.name[: -len(test_class.suffix)]  # remove .java
+        test_class_name = _fqn(package, test_class_name)
+
+        classpath = self._generate_classpath(test_class_dir, prod_class_dir)
         command = [
             "java",
             "-cp",
@@ -454,3 +481,61 @@ class JUnit4Hooks(plug.Plugin):
             status = Status.SUCCESS
 
         return status, msg
+
+
+def _package_root(class_: pathlib.Path, package: str) -> pathlib.Path:
+    """Return the package root, given that class_ is the path to a .java file.
+    If the package is the default package (empty string), simply return a copy
+    of class_.
+
+    Raise if the directory structure doesn't correspond to the package
+    statement.
+    """
+    _check_directory_corresponds_to_package(class_.parent, package)
+    root = class_.parent
+    if package:
+        root = class_.parents[len(package.split("."))]
+    return root
+
+
+def _extract_package(class_: pathlib.Path) -> str:
+    """Return the name package of the class. An empty string
+    denotes the default package.
+    """
+    assert class_.name.endswith(".java")
+    # yes, $ is a valid character for a Java identifier ...
+    ident = r"[\w$][\w\d_$]*"
+    regex = r"^\s*?package\s+({ident}(.{ident})*);".format(ident=ident)
+    with class_.open(encoding=sys.getdefaultencoding(), mode="r") as file:
+        # package statement must be on the first line
+        first_line = file.readline()
+    matches = re.search(regex, first_line)
+    if matches:
+        return matches.group(1)
+    return ""
+
+
+def _fqn(package_name: str, class_name: str) -> str:
+    """Return the fully qualified name (Java style) of the class.
+
+    Args:
+        package_name: Name of the package. The default package should be an
+            empty string.
+        class_name: Canonical name of the class.
+    Return:
+        The fully qualified name of the class.
+    """
+    return class_name if not package_name else "{}.{}".format(package_name, class_name)
+
+
+def _check_directory_corresponds_to_package(path, package):
+    """Check that the path ends in a directory structure that corresponds
+    to the package prefix.
+    """
+    required_dir_structure = package.replace(".", os.path.sep)
+    if not str(path).endswith(required_dir_structure):
+        msg = (
+            "Directory structure does not conform to package statement. Dir:"
+            " '{}' Package: '{}'".format(path, package)
+        )
+        raise _ActException(plug.HookResult(SECTION, Status.ERROR, msg))
