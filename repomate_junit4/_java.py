@@ -159,42 +159,60 @@ def pairwise_compile(
     Returns:
         A tuple of lists of HookResults on the form ``(succeeded, failed)``
     """
-    # TODO refactor this beast
     failed = []
     succeeded = []
     # only use concrete test classes
     concrete_test_classes = filter(lambda t: not is_abstract_class(t), test_classes)
     for test_class in concrete_test_classes:
-        package = extract_package(test_class)
-        prod_class_name = test_class.name.replace("Test.java", ".java")
-        try:
-            prod_class_path = [
-                file
-                for file in java_files
-                if file.name == prod_class_name and extract_package(file) == package
-            ][0]
-            adjacent_java_files = [
-                file
-                for file in prod_class_path.parent.glob("*.java")
-                if not file.name.endswith("Test.java")
-            ] + list(test_class.parent.glob("*Test.java"))
-            status, msg = javac(
-                [*adjacent_java_files], generate_classpath(classpath=classpath)
-            )
-            if status != Status.SUCCESS:
-                failed.append(plug.HookResult(SECTION, status, msg))
-            else:
-                succeeded.append((test_class, prod_class_path))
-        except IndexError as exc:
-            failed.append(
-                plug.HookResult(
-                    SECTION,
-                    Status.ERROR,
-                    "no production class found for " + fqn(package, test_class.name),
-                )
-            )
+        status, msg, prod_class_path = _pairwise_compile(
+            test_class, classpath, java_files
+        )
+        if status != Status.SUCCESS:
+            failed.append(plug.HookResult(SECTION, status, msg))
+        else:
+            succeeded.append((test_class, prod_class_path))
 
     return succeeded, failed
+
+
+def _pairwise_compile(test_class, classpath, java_files):
+    """Compile the given test class together with its production class
+    counterpoint (if it can be found). Return a tuple of (status, msg).
+    """
+    package = extract_package(test_class)
+    potential_prod_classes = _get_matching_prod_classes(test_class, package, java_files)
+
+    if len(potential_prod_classes) != 1:
+        status = Status.ERROR
+        msg = (
+            "no production class found for "
+            if not potential_prod_classes
+            else "multiple production classes found for "
+        ) + fqn(package, test_class.name)
+        prod_class_path = None
+    else:
+        prod_class_path = potential_prod_classes[0]
+        adjacent_java_files = [
+            file
+            for file in prod_class_path.parent.glob("*.java")
+            if not file.name.endswith("Test.java")
+        ] + list(test_class.parent.glob("*Test.java"))
+        status, msg = javac(
+            [*adjacent_java_files], generate_classpath(classpath=classpath)
+        )
+    return status, msg, prod_class_path
+
+
+def _get_matching_prod_classes(test_class, package, java_files):
+    """Find all production classes among the Java files that math the test
+    classes name and the package.
+    """
+    prod_class_name = test_class.name.replace("Test.java", ".java")
+    return [
+        file
+        for file in java_files
+        if file.name == prod_class_name and extract_package(file) == package
+    ]
 
 
 def _check_directory_corresponds_to_package(path: pathlib.Path, package: str):
