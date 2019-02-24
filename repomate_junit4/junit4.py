@@ -30,9 +30,11 @@ from colored import bg, style
 import repomate_plug as plug
 from repomate_plug import Status
 
-LOGGER = daiquiri.getLogger(__file__)
+from repomate_junit4 import _java
+from repomate_junit4 import _junit4_runner
+from repomate_junit4 import SECTION
 
-SECTION = "junit4"
+LOGGER = daiquiri.getLogger(__file__)
 
 HAMCREST_JAR = "hamcrest-core-1.3.jar"
 JUNIT_JAR = "junit-4.12.jar"
@@ -45,20 +47,6 @@ class _ActException(Exception):
 
     def __init__(self, hook_result):
         self.hook_result = hook_result
-
-
-def get_num_failed(test_output: bytes) -> int:
-    """Get the amount of failed tests from the error output of JUnit4."""
-    decoded = test_output.decode(encoding=sys.getdefaultencoding())
-    match = re.search(r"Failures: (\d+)", decoded)
-    # TODO this is a bit unsafe, what if there is no match?
-    return int(match.group(1))
-
-
-def parse_failed_tests(test_output: bytes) -> str:
-    """Return a list of test failure descriptions, excluding stack traces."""
-    decoded = test_output.decode(encoding=sys.getdefaultencoding())
-    return re.findall(r"^\d\) .*(?:\n(?!\s+at).*)*", decoded, flags=re.MULTILINE)
 
 
 class JUnit4Hooks(plug.Plugin):
@@ -77,7 +65,7 @@ class JUnit4Hooks(plug.Plugin):
         Assumes that all test classes end in ``Test.java`` and that there is
         a directory with the same name as the master repo in the reference
         tests directory.
-        
+
         Args:
             path: Path to the student repo.
         Returns:
@@ -105,6 +93,8 @@ class JUnit4Hooks(plug.Plugin):
             return plug.HookResult(SECTION, status, msg)
         except _ActException as exc:
             return exc.hook_result
+        except Exception as exc:
+            raise _ActException(plug.HookResult(SECTION, Status.ERROR, str(exc)))
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Get command line arguments.
@@ -204,12 +194,9 @@ class JUnit4Hooks(plug.Plugin):
         java_files = list(path.rglob("*.java"))
         master_name = self._extract_master_repo_name(path)
         test_classes = self._find_test_classes(master_name)
-        status, msg = self._javac(java_files)
-
-        if status != Status.SUCCESS:
-            raise _ActException(plug.HookResult(SECTION, status, msg))
-
-        compile_succeeded, compile_failed = self._compile(test_classes, java_files)
+        compile_succeeded, compile_failed = _java.pairwise_compile(
+            test_classes, java_files, classpath=self._generate_classpath()
+        )
         return compile_succeeded, compile_failed
 
     def _extract_master_repo_name(self, path: pathlib.Path) -> str:
@@ -218,7 +205,7 @@ class JUnit4Hooks(plug.Plugin):
         self._master_repo_names.
 
         Args:
-            path: path to the student repo.
+            path: path to the student repo
         Returns:
             the name of the associated master repository
         """
@@ -293,62 +280,6 @@ class JUnit4Hooks(plug.Plugin):
             [test_result_string(status, msg) for _, status, msg in hook_results]
         )
 
-    def _compile(
-        self, test_classes: List[pathlib.Path], java_files: List[pathlib.Path]
-    ) -> Tuple[List[plug.HookResult], List[plug.HookResult]]:
-        """Compile test classes with their associated production classes.
-
-        For each test class:
-            
-            1. Find the associated production class among the ``java_files``
-            2. Compile the test class together with all of the .java files in
-            the associated production class' directory.
-        
-        Args:
-            test_classes: A list of paths to test classes.
-            java_files: A list of paths to java files from the student repo.
-        Returns:
-            A tuple of lists of HookResults on the form ``(succeeded, failed)``
-        """
-
-        failed = []
-        succeeded = []
-        # only use concrete test classes
-        concrete_test_classes = filter(
-            lambda t: not self._is_abstract_class(t), test_classes
-        )
-        for test_class in concrete_test_classes:
-            package = _extract_package(test_class)
-            prod_class_name = test_class.name.replace("Test.java", ".java")
-            try:
-                prod_class_path = [
-                    file
-                    for file in java_files
-                    if file.name == prod_class_name
-                    and _extract_package(file) == package
-                ][0]
-                adjacent_java_files = [
-                    file
-                    for file in prod_class_path.parent.glob("*.java")
-                    if not file.name.endswith("Test.java")
-                ] + list(test_class.parent.glob("*Test.java"))
-                status, msg = self._javac([*adjacent_java_files])
-                if status != Status.SUCCESS:
-                    failed.append(plug.HookResult(SECTION, status, msg))
-                else:
-                    succeeded.append((test_class, prod_class_path))
-            except IndexError as exc:
-                failed.append(
-                    plug.HookResult(
-                        SECTION,
-                        Status.ERROR,
-                        "no production class found for "
-                        + _fqn(package, test_class.name),
-                    )
-                )
-
-        return succeeded, failed
-
     def _run_tests(
         self, test_prod_class_pairs: ResultPair
     ) -> Tuple[List[plug.HookResult], List[plug.HookResult]]:
@@ -365,23 +296,15 @@ class JUnit4Hooks(plug.Plugin):
         succeeded = []
         failed = []
         for test_class, prod_class in test_prod_class_pairs:
-            status, msg = self._junit(test_class, prod_class)
+            classpath = self._generate_classpath()
+            status, msg = _junit4_runner.run_test_class(
+                test_class, prod_class, classpath=classpath, verbose=self._verbose
+            )
             if status != Status.SUCCESS:
                 failed.append(plug.HookResult(SECTION, status, msg))
             else:
                 succeeded.append(plug.HookResult(SECTION, status, msg))
         return succeeded, failed
-
-    def _is_abstract_class(self, test_class: pathlib.Path) -> bool:
-        """Check if the file is an abstract class."""
-        assert test_class.name.endswith(".java")
-        regex = r"^\s*?(public\s+)?abstract\s+class\s+{}".format(test_class.name[:-5])
-        match = re.search(
-            regex,
-            test_class.read_text(encoding=sys.getdefaultencoding()),
-            flags=re.MULTILINE,
-        )
-        return match is not None
 
     def _generate_classpath(self, *paths: pathlib.Path) -> str:
         """
@@ -394,148 +317,14 @@ class JUnit4Hooks(plug.Plugin):
             "`{}` is not configured and not on the CLASSPATH variable."
             "This will probably crash."
         )
-        classpath = self._classpath
-        for path in paths:
-            classpath += ":{!s}".format(path)
-
-        if not (self._hamcrest_path or HAMCREST_JAR in classpath):
+        if not (self._hamcrest_path or HAMCREST_JAR in self._classpath):
             LOGGER.warning(warn.format(HAMCREST_JAR))
-        if not (self._junit_path or JUNIT_JAR in classpath):
+        if not (self._junit_path or JUNIT_JAR in self._classpath):
             LOGGER.warning(warn.format(JUNIT_JAR))
 
+        paths = list(paths)
         if self._hamcrest_path:
-            classpath += ":{}".format(self._hamcrest_path)
+            paths.append(self._hamcrest_path)
         if self._junit_path:
-            classpath += ":{}".format(self._junit_path)
-        classpath += ":."
-        return classpath
-
-    @staticmethod
-    def _extract_valid_package(test_class, prod_class):
-        """Extract a package name from the test and production class.
-        Raise if the test class and production class have different package
-        statements.
-        """
-        test_package = _extract_package(test_class)
-        prod_package = _extract_package(prod_class)
-
-        if test_package != prod_package:
-            msg = (
-                "Test class {} in package {}, but production class {} in package {}"
-            ).format(test_class.name, test_package, prod_class.name, prod_package)
-            raise _ActException(plug.HookResult(SECTION, Status.ERROR, msg))
-
-        return test_package
-
-    def _junit(self, test_class, prod_class):
-        package = self._extract_valid_package(test_class, prod_class)
-
-        prod_class_dir = _package_root(prod_class, package)
-        test_class_dir = _package_root(test_class, package)
-
-        test_class_name = test_class.name[: -len(test_class.suffix)]  # remove .java
-        test_class_name = _fqn(package, test_class_name)
-
-        classpath = self._generate_classpath(test_class_dir, prod_class_dir)
-        command = [
-            "java",
-            "-cp",
-            classpath,
-            "org.junit.runner.JUnitCore",
-            test_class_name,
-        ]
-        proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        if proc.returncode != 0:
-            status = Status.ERROR
-            msg = "Test class {} failed {} tests".format(
-                test_class_name, get_num_failed(proc.stdout)
-            )
-            if self._verbose:
-                msg += os.linesep + os.linesep.join(parse_failed_tests(proc.stdout))
-        else:
-            msg = "Test class {} passed!".format(test_class_name)
-            status = Status.SUCCESS
-
-        return status, msg
-
-    def _javac(self, java_files: Iterable[Union[str, pathlib.Path]]) -> Tuple[str, str]:
-        """Run ``javac`` on all of the specified files, assuming that they are
-        all ``.java`` files.
-
-        Args:
-            java_files: paths to ``.java`` files.
-        Returns:
-            (status, msg), where status is e.g. :py:const:`Status.ERROR` and
-            the message describes the outcome in plain text.
-        """
-        classpath = self._generate_classpath()
-        command = ["javac", "-cp", classpath, *[str(path) for path in java_files]]
-        proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        if proc.returncode != 0:
-            status = Status.ERROR
-            msg = proc.stderr.decode(sys.getdefaultencoding())
-        else:
-            msg = "all files compiled successfully"
-            status = Status.SUCCESS
-
-        return status, msg
-
-
-def _package_root(class_: pathlib.Path, package: str) -> pathlib.Path:
-    """Return the package root, given that class_ is the path to a .java file.
-    If the package is the default package (empty string), simply return a copy
-    of class_.
-
-    Raise if the directory structure doesn't correspond to the package
-    statement.
-    """
-    _check_directory_corresponds_to_package(class_.parent, package)
-    root = class_.parent
-    if package:
-        root = class_.parents[len(package.split("."))]
-    return root
-
-
-def _extract_package(class_: pathlib.Path) -> str:
-    """Return the name package of the class. An empty string
-    denotes the default package.
-    """
-    assert class_.name.endswith(".java")
-    # yes, $ is a valid character for a Java identifier ...
-    ident = r"[\w$][\w\d_$]*"
-    regex = r"^\s*?package\s+({ident}(.{ident})*);".format(ident=ident)
-    with class_.open(encoding=sys.getdefaultencoding(), mode="r") as file:
-        # package statement must be on the first line
-        first_line = file.readline()
-    matches = re.search(regex, first_line)
-    if matches:
-        return matches.group(1)
-    return ""
-
-
-def _fqn(package_name: str, class_name: str) -> str:
-    """Return the fully qualified name (Java style) of the class.
-
-    Args:
-        package_name: Name of the package. The default package should be an
-            empty string.
-        class_name: Canonical name of the class.
-    Return:
-        The fully qualified name of the class.
-    """
-    return class_name if not package_name else "{}.{}".format(package_name, class_name)
-
-
-def _check_directory_corresponds_to_package(path, package):
-    """Check that the path ends in a directory structure that corresponds
-    to the package prefix.
-    """
-    required_dir_structure = package.replace(".", os.path.sep)
-    if not str(path).endswith(required_dir_structure):
-        msg = (
-            "Directory structure does not conform to package statement. Dir:"
-            " '{}' Package: '{}'".format(path, package)
-        )
-        raise _ActException(plug.HookResult(SECTION, Status.ERROR, msg))
+            paths.append(self._junit_path)
+        return _java.generate_classpath(*paths, classpath=self._classpath)
