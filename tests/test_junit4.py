@@ -67,6 +67,8 @@ PACKAGED_CODE_REPO = REPO_DIR / "student-packaged-code"
 DEFAULT_PACKAGED_CODE_REPO = REPO_DIR / "default-packaged-code"
 NO_DIR_STRUCTURE_REPO = REPO_DIR / "no-dir-structure-packaged-code"
 MULTIPLE_PACKAGES_REPO = REPO_DIR / "student-multiple-packages"
+UNAUTHORIZED_READ_FILE_REPO = REPO_DIR / "unauthorized-read-file-week-10"
+UNAUTHORIZED_NETWORK_ACCESS_REPO = REPO_DIR / "unauthorized-network-access-week-10"
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -126,6 +128,37 @@ def getenv_empty_classpath(mocker):
 def getenv_with_classpath(getenv_empty_classpath):
     side_effect = lambda name: CLASSPATH if name == "CLASSPATH" else os.getenv(name)
     getenv_empty_classpath.side_effect = side_effect
+
+
+@pytest.fixture
+def setup_hooks():
+    """Fixture that returns a setup function for hooks, with default values for
+    all parameters.
+
+    TODO: Refactor TestActOnClonedRepo to use this instead.
+    """
+
+    def _setup_hooks(
+        *,
+        reference_tests_dir=RTD,
+        master_repo_names=MASTER_REPO_NAMES,
+        ignore_tests=[],
+        classpath=CLASSPATH,
+        hamcrest_path=HAMCREST_PATH,
+        junit_path=JUNIT_PATH,
+        verbose=False
+    ):
+        hooks = junit4.JUnit4Hooks()
+        hooks._reference_tests_dir = reference_tests_dir
+        hooks._master_repo_names = master_repo_names
+        hooks._ignore_tests = ignore_tests
+        hooks._classpath = classpath
+        hooks._hamcrest_path = hamcrest_path
+        hooks._junit_path = junit_path
+        hooks._verbose = verbose
+        return hooks
+
+    return _setup_hooks
 
 
 class TestActOnClonedRepo:
@@ -189,11 +222,11 @@ class TestActOnClonedRepo:
         hooks = self.setup_hooks(verbose=True)
 
         expected_verbose_msg = """1) isPrimeFalseForComposites(PrimeCheckerTest)
-java.lang.AssertionError: 
+java.lang.AssertionError:
 Expected: is <false>
      but: was <true>
 2) oneIsNotPrime(PrimeCheckerTest)
-java.lang.AssertionError: 
+java.lang.AssertionError:
 Expected: is <false>
      but: was <true>"""
 
@@ -314,6 +347,32 @@ Expected: is <false>
         result = hooks.act_on_cloned_repo(MULTIPLE_PACKAGES_REPO)
 
         assert result.status == Status.SUCCESS
+
+
+class TestSecurityPolicy:
+    """Tests that assert that the default security policy model blocks access
+    to unauthorized resources.
+    """
+
+    def test_error_on_unauthorized_read(self, setup_hooks):
+        """Test that the default security policy blocks read access to
+        files.
+        """
+        hooks = setup_hooks(verbose=True)
+
+        result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
+
+        assert result.status == Status.ERROR
+        assert "java.security.AccessControlException: access denied" in result.msg
+
+    def test_error_on_unauthorized_network_access(self, setup_hooks):
+        """Test that the default security policy blocks network access."""
+        hooks = setup_hooks(verbose=True)
+
+        result = hooks.act_on_cloned_repo(UNAUTHORIZED_NETWORK_ACCESS_REPO)
+
+        assert result.status == Status.ERROR
+        assert "java.security.AccessControlException: access denied" in result.msg
 
 
 class TestParseArgs:
