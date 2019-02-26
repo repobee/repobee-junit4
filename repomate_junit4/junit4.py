@@ -22,6 +22,7 @@ import argparse
 import configparser
 import re
 import pathlib
+import tempfile
 from typing import Union, Iterable, Tuple, List
 
 import daiquiri
@@ -35,9 +36,6 @@ from repomate_junit4 import _junit4_runner
 from repomate_junit4 import SECTION
 
 LOGGER = daiquiri.getLogger(__file__)
-
-HAMCREST_JAR = "hamcrest-core-1.3.jar"
-JUNIT_JAR = "junit-4.12.jar"
 
 ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
@@ -143,19 +141,23 @@ class JUnit4Hooks(plug.Plugin):
         clone_parser.add_argument(
             "-ham",
             "--hamcrest-path",
-            help="Absolute path to the `{}` library.".format(HAMCREST_JAR),
+            help="Absolute path to the `{}` library.".format(
+                _junit4_runner.HAMCREST_JAR
+            ),
             type=str,
             # required if not picked up in config_hook nor on classpath
-            required=not self._hamcrest_path and not HAMCREST_JAR in self._classpath,
+            required=not self._hamcrest_path
+            and not _junit4_runner.HAMCREST_JAR in self._classpath,
         )
 
         clone_parser.add_argument(
             "-junit",
             "--junit-path",
-            help="Absolute path to the `{}` library.".format(JUNIT_JAR),
+            help="Absolute path to the `{}` library.".format(_junit4_runner.JUNIT_JAR),
             type=str,
             # required if not picked up in config_hook nor on classpath
-            required=not self._junit_path and not JUNIT_JAR in self._classpath,
+            required=not self._junit_path
+            and not _junit4_runner.JUNIT_JAR in self._classpath,
         )
 
         clone_parser.add_argument(
@@ -295,16 +297,21 @@ class JUnit4Hooks(plug.Plugin):
         """
         succeeded = []
         failed = []
-        for test_class, prod_class in test_prod_class_pairs:
-            classpath = self._generate_classpath()
-            status, msg = _junit4_runner.run_test_class(
-                test_class, prod_class, classpath=classpath, verbose=self._verbose
-            )
-            if status != Status.SUCCESS:
-                failed.append(plug.HookResult(SECTION, status, msg))
-            else:
-                succeeded.append(plug.HookResult(SECTION, status, msg))
-        return succeeded, failed
+        classpath = self._generate_classpath()
+        with _junit4_runner.security_policy(classpath, active=True) as security_policy:
+            for test_class, prod_class in test_prod_class_pairs:
+                status, msg = _junit4_runner.run_test_class(
+                    test_class,
+                    prod_class,
+                    classpath=classpath,
+                    verbose=self._verbose,
+                    security_policy=security_policy,
+                )
+                if status != Status.SUCCESS:
+                    failed.append(plug.HookResult(SECTION, status, msg))
+                else:
+                    succeeded.append(plug.HookResult(SECTION, status, msg))
+            return succeeded, failed
 
     def _generate_classpath(self, *paths: pathlib.Path) -> str:
         """
@@ -317,10 +324,10 @@ class JUnit4Hooks(plug.Plugin):
             "`{}` is not configured and not on the CLASSPATH variable."
             "This will probably crash."
         )
-        if not (self._hamcrest_path or HAMCREST_JAR in self._classpath):
-            LOGGER.warning(warn.format(HAMCREST_JAR))
-        if not (self._junit_path or JUNIT_JAR in self._classpath):
-            LOGGER.warning(warn.format(JUNIT_JAR))
+        if not (self._hamcrest_path or _junit4_runner.HAMCREST_JAR in self._classpath):
+            LOGGER.warning(warn.format(_junit4_runner.HAMCREST_JAR))
+        if not (self._junit_path or _junit4_runner.JUNIT_JAR in self._classpath):
+            LOGGER.warning(warn.format(_junit4_runner.JUNIT_JAR))
 
         paths = list(paths)
         if self._hamcrest_path:

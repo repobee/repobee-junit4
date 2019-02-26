@@ -16,6 +16,7 @@ import pathlib
 import shutil
 import tempfile
 import os
+import re
 from configparser import ConfigParser
 from collections import namedtuple
 from argparse import ArgumentParser
@@ -25,6 +26,7 @@ import pytest
 import repomate_plug as plug
 from repomate_plug import Status
 from repomate_junit4 import junit4
+from repomate_junit4 import _junit4_runner
 
 import envvars
 
@@ -222,11 +224,11 @@ class TestActOnClonedRepo:
         hooks = self.setup_hooks(verbose=True)
 
         expected_verbose_msg = """1) isPrimeFalseForComposites(PrimeCheckerTest)
-java.lang.AssertionError:
+java.lang.AssertionError: 
 Expected: is <false>
      but: was <true>
 2) oneIsNotPrime(PrimeCheckerTest)
-java.lang.AssertionError:
+java.lang.AssertionError: 
 Expected: is <false>
      but: was <true>"""
 
@@ -411,8 +413,8 @@ class TestParseArgs:
         """
         args = Args(master_repo_names=MASTER_REPO_NAMES)
         expected_ignore_tests = ["some", "tests"]
-        expected_hamcrest_path = "some/path/to/{}".format(junit4.HAMCREST_JAR)
-        expected_junit_path = "other/path/to/{}".format(junit4.JUNIT_JAR)
+        expected_hamcrest_path = "some/path/to/{}".format(_junit4_runner.HAMCREST_JAR)
+        expected_junit_path = "other/path/to/{}".format(_junit4_runner.JUNIT_JAR)
         expected_rtd = RTD
 
         junit4_hooks._ignore_tests = expected_ignore_tests
