@@ -40,6 +40,7 @@ Args = namedtuple(
         "hamcrest_path",
         "junit_path",
         "verbose",
+        "disable_security",
     ),
 )
 Args.__new__.__defaults__ = (None,) * len(Args._fields)
@@ -106,6 +107,7 @@ def full_args():
         hamcrest_path=HAMCREST_PATH,
         junit_path=JUNIT_PATH,
         verbose=False,
+        disable_security=False,
     )
 
 
@@ -148,7 +150,8 @@ def setup_hooks():
         classpath=CLASSPATH,
         hamcrest_path=HAMCREST_PATH,
         junit_path=JUNIT_PATH,
-        verbose=False
+        verbose=False,
+        disable_security=False,
     ):
         hooks = junit4.JUnit4Hooks()
         hooks._reference_tests_dir = reference_tests_dir
@@ -158,6 +161,7 @@ def setup_hooks():
         hooks._hamcrest_path = hamcrest_path
         hooks._junit_path = junit_path
         hooks._verbose = verbose
+        hooks._disable_security = disable_security
         return hooks
 
     return _setup_hooks
@@ -180,7 +184,7 @@ class TestActOnClonedRepo:
         classpath=CLASSPATH,
         hamcrest_path=HAMCREST_PATH,
         junit_path=JUNIT_PATH,
-        verbose=False
+        verbose=False,
     ):
         hooks = junit4.JUnit4Hooks()
         hooks._reference_tests_dir = reference_tests_dir
@@ -376,6 +380,17 @@ class TestSecurityPolicy:
         assert result.status == Status.ERROR
         assert "java.security.AccessControlException: access denied" in result.msg
 
+    def test_file_access_allowed_with_disabled_security(self, setup_hooks):
+        """Test that student code can access files without crashing if security
+        is disabled.
+        """
+        hooks = setup_hooks(disable_security=True)
+
+        result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
+
+        assert result.status == Status.SUCCESS
+        assert "Test class FiboTest passed!" in result.msg
+
 
 class TestParseArgs:
     def test_all_args(self, junit4_hooks, full_args):
@@ -389,6 +404,7 @@ class TestParseArgs:
         assert junit4_hooks._ignore_tests == IGNORE_TESTS
         assert junit4_hooks._hamcrest_path == HAMCREST_PATH
         assert junit4_hooks._junit_path == JUNIT_PATH
+        assert junit4_hooks._disable_security == False
 
     def test_defaults_are_overwritten(self, junit4_hooks, full_args):
         """Test that ignore_tests, hamcrest_path and junit_path are all
@@ -416,11 +432,13 @@ class TestParseArgs:
         expected_hamcrest_path = "some/path/to/{}".format(_junit4_runner.HAMCREST_JAR)
         expected_junit_path = "other/path/to/{}".format(_junit4_runner.JUNIT_JAR)
         expected_rtd = RTD
+        expected_disable_security = False
 
         junit4_hooks._ignore_tests = expected_ignore_tests
         junit4_hooks._hamcrest_path = expected_hamcrest_path
         junit4_hooks._junit_path = expected_junit_path
         junit4_hooks._reference_tests_dir = expected_rtd
+        junit4_hooks._disable_security = expected_disable_security
 
         junit4_hooks.parse_args(args)
 
@@ -428,6 +446,7 @@ class TestParseArgs:
         assert junit4_hooks._hamcrest_path == expected_hamcrest_path
         assert junit4_hooks._junit_path == expected_junit_path
         assert junit4_hooks._reference_tests_dir == expected_rtd
+        assert junit4_hooks._disable_security == expected_disable_security
 
 
 class TestConfigHook:

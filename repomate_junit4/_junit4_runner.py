@@ -35,7 +35,9 @@ def security_policy(classpath: str, active: bool):
     TODO: Make it possible to use a custom security policy here.
     """
     if not active:
-        LOGGER.warning("Security policy disabled")
+        LOGGER.warning(
+            "Security policy disabled, student code running without restrictions"
+        )
         yield
         return
 

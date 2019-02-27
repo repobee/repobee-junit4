@@ -55,6 +55,7 @@ class JUnit4Hooks(plug.Plugin):
         self._hamcrest_path = ""
         self._junit_path = ""
         self._classpath = ""
+        self._disable_security = False
 
     def act_on_cloned_repo(self, path: Union[str, pathlib.Path]) -> plug.HookResult:
         """Look for production classes in the student repo corresponding to
@@ -115,6 +116,9 @@ class JUnit4Hooks(plug.Plugin):
         )
         self._junit_path = args.junit_path if args.junit_path else self._junit_path
         self._verbose = args.verbose
+        self._disable_security = (
+            args.disable_security if args.disable_security else self._disable_security
+        )
 
     def clone_parser_hook(self, clone_parser: configparser.ConfigParser) -> None:
         """Add reference_tests_dir argument to parser.
@@ -158,6 +162,12 @@ class JUnit4Hooks(plug.Plugin):
             # required if not picked up in config_hook nor on classpath
             required=not self._junit_path
             and not _junit4_runner.JUNIT_JAR in self._classpath,
+        )
+
+        clone_parser.add_argument(
+            "--disable-security",
+            help="Disable the default security policy (student code can do whatever).",
+            action="store_true",
         )
 
         clone_parser.add_argument(
@@ -298,7 +308,9 @@ class JUnit4Hooks(plug.Plugin):
         succeeded = []
         failed = []
         classpath = self._generate_classpath()
-        with _junit4_runner.security_policy(classpath, active=True) as security_policy:
+        with _junit4_runner.security_policy(
+            classpath, active=not self._disable_security
+        ) as security_policy:
             for test_class, prod_class in test_prod_class_pairs:
                 status, msg = _junit4_runner.run_test_class(
                     test_class,
