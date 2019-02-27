@@ -143,7 +143,6 @@ def setup_hooks():
     """
 
     def _setup_hooks(
-        *,
         reference_tests_dir=RTD,
         master_repo_names=MASTER_REPO_NAMES,
         ignore_tests=[],
@@ -177,7 +176,6 @@ class TestActOnClonedRepo:
 
     def setup_hooks(
         self,
-        *,
         reference_tests_dir=RTD,
         master_repo_names=MASTER_REPO_NAMES,
         ignore_tests=[],
