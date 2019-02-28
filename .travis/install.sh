@@ -4,9 +4,11 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
 
     brew upgrade pyenv
     eval "$(pyenv init -)"
-    pyenv install "$PYTHON"
-    pyenv global "$PYTHON"
-    python -m pip install -e ".[TEST]"
+    pyenv install 3.5.4
+    pyenv install 3.6.5
+    pyenv install 3.7.0
+    pip install tox tox-pyenv --upgrade
+    pyenv local 3.5.4 3.6.5 3.7.0
 else
     pip install -e ".[TEST]"
 fi
