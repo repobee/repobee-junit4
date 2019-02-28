@@ -1,8 +1,4 @@
 language: python
-python:
-  - 3.5
-  - 3.6
-  - 3.7
 branches:
   only:
   - master
@@ -15,6 +11,13 @@ matrix:
   include:
   - os: linux
     language: python
+    python:
+        - "3.5"
+        - "3.6"
+        - "3.7"
+  - os: osx
+    language: generic
+    sudo: true
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
