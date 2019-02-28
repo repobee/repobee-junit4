@@ -7,6 +7,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     pyenv install 3.5.4
     pyenv install 3.6.5
     pyenv install 3.7.0
+    pyenv global 3.7.0
     pip install pip --upgrade
     pip install tox tox-pyenv
 else
