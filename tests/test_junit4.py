@@ -16,6 +16,7 @@ import pathlib
 import shutil
 import tempfile
 import os
+import re
 from configparser import ConfigParser
 from collections import namedtuple
 from argparse import ArgumentParser
@@ -25,6 +26,7 @@ import pytest
 import repomate_plug as plug
 from repomate_plug import Status
 from repomate_junit4 import junit4
+from repomate_junit4 import _junit4_runner
 
 import envvars
 
@@ -38,6 +40,7 @@ Args = namedtuple(
         "hamcrest_path",
         "junit_path",
         "verbose",
+        "disable_security",
     ),
 )
 Args.__new__.__defaults__ = (None,) * len(Args._fields)
@@ -67,6 +70,8 @@ PACKAGED_CODE_REPO = REPO_DIR / "student-packaged-code"
 DEFAULT_PACKAGED_CODE_REPO = REPO_DIR / "default-packaged-code"
 NO_DIR_STRUCTURE_REPO = REPO_DIR / "no-dir-structure-packaged-code"
 MULTIPLE_PACKAGES_REPO = REPO_DIR / "student-multiple-packages"
+UNAUTHORIZED_READ_FILE_REPO = REPO_DIR / "unauthorized-read-file-week-10"
+UNAUTHORIZED_NETWORK_ACCESS_REPO = REPO_DIR / "unauthorized-network-access-week-10"
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -102,6 +107,7 @@ def full_args():
         hamcrest_path=HAMCREST_PATH,
         junit_path=JUNIT_PATH,
         verbose=False,
+        disable_security=False,
     )
 
 
@@ -128,6 +134,38 @@ def getenv_with_classpath(getenv_empty_classpath):
     getenv_empty_classpath.side_effect = side_effect
 
 
+@pytest.fixture
+def setup_hooks():
+    """Fixture that returns a setup function for hooks, with default values for
+    all parameters.
+
+    TODO: Refactor TestActOnClonedRepo to use this instead.
+    """
+
+    def _setup_hooks(
+        reference_tests_dir=RTD,
+        master_repo_names=MASTER_REPO_NAMES,
+        ignore_tests=[],
+        classpath=CLASSPATH,
+        hamcrest_path=HAMCREST_PATH,
+        junit_path=JUNIT_PATH,
+        verbose=False,
+        disable_security=False,
+    ):
+        hooks = junit4.JUnit4Hooks()
+        hooks._reference_tests_dir = reference_tests_dir
+        hooks._master_repo_names = master_repo_names
+        hooks._ignore_tests = ignore_tests
+        hooks._classpath = classpath
+        hooks._hamcrest_path = hamcrest_path
+        hooks._junit_path = junit_path
+        hooks._verbose = verbose
+        hooks._disable_security = disable_security
+        return hooks
+
+    return _setup_hooks
+
+
 class TestActOnClonedRepo:
     """
 
@@ -138,14 +176,13 @@ class TestActOnClonedRepo:
 
     def setup_hooks(
         self,
-        *,
         reference_tests_dir=RTD,
         master_repo_names=MASTER_REPO_NAMES,
         ignore_tests=[],
         classpath=CLASSPATH,
         hamcrest_path=HAMCREST_PATH,
         junit_path=JUNIT_PATH,
-        verbose=False
+        verbose=False,
     ):
         hooks = junit4.JUnit4Hooks()
         hooks._reference_tests_dir = reference_tests_dir
@@ -316,6 +353,43 @@ Expected: is <false>
         assert result.status == Status.SUCCESS
 
 
+class TestSecurityPolicy:
+    """Tests that assert that the default security policy model blocks access
+    to unauthorized resources.
+    """
+
+    def test_error_on_unauthorized_read(self, setup_hooks):
+        """Test that the default security policy blocks read access to
+        files.
+        """
+        hooks = setup_hooks(verbose=True)
+
+        result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
+
+        assert result.status == Status.ERROR
+        assert "java.security.AccessControlException: access denied" in result.msg
+
+    def test_error_on_unauthorized_network_access(self, setup_hooks):
+        """Test that the default security policy blocks network access."""
+        hooks = setup_hooks(verbose=True)
+
+        result = hooks.act_on_cloned_repo(UNAUTHORIZED_NETWORK_ACCESS_REPO)
+
+        assert result.status == Status.ERROR
+        assert "java.security.AccessControlException: access denied" in result.msg
+
+    def test_file_access_allowed_with_disabled_security(self, setup_hooks):
+        """Test that student code can access files without crashing if security
+        is disabled.
+        """
+        hooks = setup_hooks(disable_security=True)
+
+        result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
+
+        assert result.status == Status.SUCCESS
+        assert "Test class FiboTest passed!" in result.msg
+
+
 class TestParseArgs:
     def test_all_args(self, junit4_hooks, full_args):
         """Test that args-related attributes are correctly set when all of them
@@ -328,6 +402,7 @@ class TestParseArgs:
         assert junit4_hooks._ignore_tests == IGNORE_TESTS
         assert junit4_hooks._hamcrest_path == HAMCREST_PATH
         assert junit4_hooks._junit_path == JUNIT_PATH
+        assert junit4_hooks._disable_security == False
 
     def test_defaults_are_overwritten(self, junit4_hooks, full_args):
         """Test that ignore_tests, hamcrest_path and junit_path are all
@@ -352,14 +427,16 @@ class TestParseArgs:
         """
         args = Args(master_repo_names=MASTER_REPO_NAMES)
         expected_ignore_tests = ["some", "tests"]
-        expected_hamcrest_path = "some/path/to/{}".format(junit4.HAMCREST_JAR)
-        expected_junit_path = "other/path/to/{}".format(junit4.JUNIT_JAR)
+        expected_hamcrest_path = "some/path/to/{}".format(_junit4_runner.HAMCREST_JAR)
+        expected_junit_path = "other/path/to/{}".format(_junit4_runner.JUNIT_JAR)
         expected_rtd = RTD
+        expected_disable_security = False
 
         junit4_hooks._ignore_tests = expected_ignore_tests
         junit4_hooks._hamcrest_path = expected_hamcrest_path
         junit4_hooks._junit_path = expected_junit_path
         junit4_hooks._reference_tests_dir = expected_rtd
+        junit4_hooks._disable_security = expected_disable_security
 
         junit4_hooks.parse_args(args)
 
@@ -367,6 +444,7 @@ class TestParseArgs:
         assert junit4_hooks._hamcrest_path == expected_hamcrest_path
         assert junit4_hooks._junit_path == expected_junit_path
         assert junit4_hooks._reference_tests_dir == expected_rtd
+        assert junit4_hooks._disable_security == expected_disable_security
 
 
 class TestConfigHook:
