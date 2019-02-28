@@ -12,6 +12,13 @@ matrix:
   - os: osx
     language: generic
     sudo: true
+    before_cache:
+      - brew cleanup
+    cache:
+      directories:
+        # cache homebrew
+        - $HOME/Library/Caches/Homebrew
+        - /Users/travis/.pyenv/versions
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
