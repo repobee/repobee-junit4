@@ -11,8 +11,6 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     pip install pip --upgrade
     pip install tox tox-pyenv
 else
-    pip install pip --upgrade
-    pip install tox tox-travis
     pip install -e ".[TEST]"
 fi
 
