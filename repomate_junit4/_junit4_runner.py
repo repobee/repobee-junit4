@@ -52,13 +52,12 @@ def _generate_default_security_policy(classpath: str) -> str:
     """Generate the default security policy from the classpath. ``junit-4.12.jar``
     must be on the classpath.
     """
-    pattern = "{sep}([^{sep}]*{junit_jar}){sep}".format(
-        sep=os.pathsep, junit_jar=JUNIT_JAR
-    )
+    escaped_junit_jar = JUNIT_JAR.replace(".", r"\.")
+    pattern = "[^{sep}]*{junit_jar}".format(sep=os.pathsep, junit_jar=escaped_junit_jar)
     junit_jar_matches = re.search(pattern, classpath)
     if not junit_jar_matches:
         raise ValueError("{} not on the classpath".format(JUNIT_JAR))
-    path = junit_jar_matches.group(1)
+    path = junit_jar_matches.group(0)
     return _DEFAULT_SECURITY_POLICY_TEMPLATE.format(junit4_jar_path=path)
 
 
