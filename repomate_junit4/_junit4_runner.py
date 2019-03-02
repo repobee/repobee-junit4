@@ -57,7 +57,7 @@ def _generate_default_security_policy(classpath: str) -> str:
     junit_jar_matches = re.search(pattern, classpath)
     if not junit_jar_matches:
         raise ValueError("{} not on the classpath".format(JUNIT_JAR))
-    path = junit_jar_matches[0]
+    path = junit_jar_matches.group(0)
     return _DEFAULT_SECURITY_POLICY_TEMPLATE.format(junit4_jar_path=path)
 
 
