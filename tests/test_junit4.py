@@ -352,6 +352,26 @@ Expected: is <false>
 
         assert result.status == Status.SUCCESS
 
+    _CP = "{}:{}:{}:{}"
+
+    @pytest.mark.parametrize(
+        "classpath",
+        [
+            _CP.format(JUNIT_PATH, HAMCREST_PATH, "garbage/path", "."),
+            _CP.format(HAMCREST_PATH, "garbage/path", JUNIT_PATH, "."),
+            _CP.format("garbage/path", HAMCREST_PATH, ".", JUNIT_PATH),
+        ],
+    )
+    def test_jars_found_on_classpath(self, setup_hooks, classpath):
+        """Test that acting on a repo when the hamcrest and junit jars are only
+        specified on the classpath works as intended.
+        """
+        hooks = setup_hooks(hamcrest_path="", junit_path="", classpath=classpath)
+
+        result = hooks.act_on_cloned_repo(SUCCESS_REPO)
+
+        assert result.status == Status.SUCCESS
+
 
 class TestSecurityPolicy:
     """Tests that assert that the default security policy model blocks access
