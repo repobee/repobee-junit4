@@ -39,6 +39,8 @@ LOGGER = daiquiri.getLogger(__file__)
 
 ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
+DEFAULT_LINE_LIMIT = 150
+
 
 class _ActException(Exception):
     """Raise if something goes wrong in act_on_clone_repo."""
@@ -55,6 +57,8 @@ class JUnit4Hooks(plug.Plugin):
         self._hamcrest_path = ""
         self._junit_path = ""
         self._classpath = ""
+        self._verbose = False
+        self._very_verbose = False
         self._disable_security = False
 
     def act_on_cloned_repo(self, path: Union[str, pathlib.Path]) -> plug.HookResult:
@@ -116,6 +120,7 @@ class JUnit4Hooks(plug.Plugin):
         )
         self._junit_path = args.junit_path if args.junit_path else self._junit_path
         self._verbose = args.verbose
+        self._very_verbose = args.very_verbose
         self._disable_security = (
             args.disable_security if args.disable_security else self._disable_security
         )
@@ -170,10 +175,17 @@ class JUnit4Hooks(plug.Plugin):
             action="store_true",
         )
 
-        clone_parser.add_argument(
+        verbosity = clone_parser.add_mutually_exclusive_group()
+        verbosity.add_argument(
             "-v",
             "--verbose",
             help="Display more information about test failures.",
+            action="store_true",
+        )
+        verbosity.add_argument(
+            "-vv",
+            "--very-verbose",
+            help="Display the full failure output, without truncating.",
             action="store_true",
         )
 
@@ -286,7 +298,10 @@ class JUnit4Hooks(plug.Plugin):
             Status.SUCCESS: bg("dark_green"),
         }
         test_result_string = lambda status, msg: "{}{}:{} {}".format(
-            backgrounds[status], status, style.RESET, msg
+            backgrounds[status],
+            status,
+            style.RESET,
+            msg if self._very_verbose else self._truncate_lines(msg),
         )
         return os.linesep.join(
             [test_result_string(status, msg) for _, status, msg in hook_results]
@@ -316,7 +331,7 @@ class JUnit4Hooks(plug.Plugin):
                     test_class,
                     prod_class,
                     classpath=classpath,
-                    verbose=self._verbose,
+                    verbose=self._verbose or self._very_verbose,
                     security_policy=security_policy,
                 )
                 if status != Status.SUCCESS:
@@ -347,3 +362,17 @@ class JUnit4Hooks(plug.Plugin):
         if self._junit_path:
             paths.append(self._junit_path)
         return _java.generate_classpath(*paths, classpath=self._classpath)
+
+    @staticmethod
+    def _truncate_lines(string: str, max_len: int = DEFAULT_LINE_LIMIT):
+        """Truncate lines to 100 characters."""
+        trunc_msg = " #[...]# "
+        effective_len = max_len - len(trunc_msg)
+        head_len = effective_len // 2
+        tail_len = effective_len // 2
+        truncate = (
+            lambda s: s[:head_len] + trunc_msg + s[-tail_len:]
+            if len(s) > max_len
+            else s
+        )
+        return os.linesep.join([truncate(line) for line in string.split(os.linesep)])
