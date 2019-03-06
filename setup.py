@@ -29,8 +29,10 @@ setup(
     author="Simon Larsén",
     author_email="slarse@kth.se",
     url="https://github.com/slarse/repomate-junit4",
-    download_url="https://github.com/slarse/repomate-junit4/archive/v{}.tar.gz".format(
-        __version__
+    download_url=(
+        "https://github.com/slarse/repomate-junit4/archive/v{}.tar.gz".format(
+            __version__
+        )
     ),
     license="MIT",
     packages=find_packages(exclude=("tests", "docs")),
