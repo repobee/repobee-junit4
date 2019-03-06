@@ -301,7 +301,7 @@ class JUnit4Hooks(plug.Plugin):
             backgrounds[status],
             status,
             style.RESET,
-            msg if self._very_verbose else self._truncate_lines(msg),
+            _truncate_lines(msg) if self._verbose else msg,
         )
         return os.linesep.join(
             [test_result_string(status, msg) for _, status, msg in hook_results]
@@ -363,16 +363,20 @@ class JUnit4Hooks(plug.Plugin):
             paths.append(self._junit_path)
         return _java.generate_classpath(*paths, classpath=self._classpath)
 
-    @staticmethod
-    def _truncate_lines(string: str, max_len: int = DEFAULT_LINE_LIMIT):
-        """Truncate lines to 100 characters."""
-        trunc_msg = " #[...]# "
-        effective_len = max_len - len(trunc_msg)
-        head_len = effective_len // 2
-        tail_len = effective_len // 2
-        truncate = (
-            lambda s: s[:head_len] + trunc_msg + s[-tail_len:]
-            if len(s) > max_len
-            else s
-        )
-        return os.linesep.join([truncate(line) for line in string.split(os.linesep)])
+
+def _truncate_lines(string: str, max_len: int = DEFAULT_LINE_LIMIT):
+    """Truncate lines to max_len characters."""
+    trunc_msg = " #[...]# "
+    if max_len <= len(trunc_msg):
+        raise ValueError("max_len must be greater than {}".format(len(trunc_msg)))
+
+    effective_len = max_len - len(trunc_msg)
+    head_len = effective_len // 2
+    tail_len = effective_len // 2
+
+    def truncate(s):
+        if len(s) > max_len:
+            return s[:head_len] + trunc_msg + s[-tail_len:]
+        return s
+
+    return os.linesep.join([truncate(line) for line in string.split(os.linesep)])
