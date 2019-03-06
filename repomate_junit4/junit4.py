@@ -1,4 +1,5 @@
-"""Plugin that runs JUnit4 on test classes and corresponding production classes.
+"""Plugin that runs JUnit4 on test classes and corresponding production
+classes.
 
 .. important::
 
@@ -14,15 +15,11 @@ discovered in student repositories. See the README for more details.
 
 .. moduleauthor:: Simon Larsén
 """
-import subprocess
 import itertools
-import sys
 import os
 import argparse
 import configparser
-import re
 import pathlib
-import tempfile
 from typing import Union, Iterable, Tuple, List
 
 import daiquiri
@@ -61,7 +58,9 @@ class JUnit4Hooks(plug.Plugin):
         self._very_verbose = False
         self._disable_security = False
 
-    def act_on_cloned_repo(self, path: Union[str, pathlib.Path]) -> plug.HookResult:
+    def act_on_cloned_repo(
+        self, path: Union[str, pathlib.Path]
+    ) -> plug.HookResult:
         """Look for production classes in the student repo corresponding to
         test classes in the reference tests directory.
 
@@ -92,12 +91,18 @@ class JUnit4Hooks(plug.Plugin):
                 itertools.chain(tests_succeeded, tests_failed, compile_failed)
             )
 
-            status = Status.ERROR if tests_failed or compile_failed else Status.SUCCESS
+            status = (
+                Status.ERROR
+                if tests_failed or compile_failed
+                else Status.SUCCESS
+            )
             return plug.HookResult(SECTION, status, msg)
         except _ActException as exc:
             return exc.hook_result
         except Exception as exc:
-            raise _ActException(plug.HookResult(SECTION, Status.ERROR, str(exc)))
+            raise _ActException(
+                plug.HookResult(SECTION, Status.ERROR, str(exc))
+            )
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Get command line arguments.
@@ -118,14 +123,20 @@ class JUnit4Hooks(plug.Plugin):
         self._hamcrest_path = (
             args.hamcrest_path if args.hamcrest_path else self._hamcrest_path
         )
-        self._junit_path = args.junit_path if args.junit_path else self._junit_path
+        self._junit_path = (
+            args.junit_path if args.junit_path else self._junit_path
+        )
         self._verbose = args.verbose
         self._very_verbose = args.very_verbose
         self._disable_security = (
-            args.disable_security if args.disable_security else self._disable_security
+            args.disable_security
+            if args.disable_security
+            else self._disable_security
         )
 
-    def clone_parser_hook(self, clone_parser: configparser.ConfigParser) -> None:
+    def clone_parser_hook(
+        self, clone_parser: configparser.ConfigParser
+    ) -> None:
         """Add reference_tests_dir argument to parser.
 
         Args:
@@ -156,22 +167,27 @@ class JUnit4Hooks(plug.Plugin):
             type=str,
             # required if not picked up in config_hook nor on classpath
             required=not self._hamcrest_path
-            and not _junit4_runner.HAMCREST_JAR in self._classpath,
+            and _junit4_runner.HAMCREST_JAR not in self._classpath,
         )
 
         clone_parser.add_argument(
             "-junit",
             "--junit-path",
-            help="Absolute path to the `{}` library.".format(_junit4_runner.JUNIT_JAR),
+            help="Absolute path to the `{}` library.".format(
+                _junit4_runner.JUNIT_JAR
+            ),
             type=str,
             # required if not picked up in config_hook nor on classpath
             required=not self._junit_path
-            and not _junit4_runner.JUNIT_JAR in self._classpath,
+            and _junit4_runner.JUNIT_JAR not in self._classpath,
         )
 
         clone_parser.add_argument(
             "--disable-security",
-            help="Disable the default security policy (student code can do whatever).",
+            help=(
+                "Disable the default security policy (student code can do "
+                "whatever)."
+            ),
             action="store_true",
         )
 
@@ -240,7 +256,7 @@ class JUnit4Hooks(plug.Plugin):
             msg = (
                 "no master repo name matching the student repo"
                 if not matches
-                else "multiple master repo names matching student repo: {}".format(
+                else "multiple matching master repo names: {}".format(
                     ", ".join(matches)
                 )
             )
@@ -254,7 +270,8 @@ class JUnit4Hooks(plug.Plugin):
         Args:
             master_name: Name of a master repo.
         Returns:
-            a list of test classes from the corresponding reference test directory.
+            a list of test classes from the corresponding reference test
+            directory.
         """
         test_dir = pathlib.Path(self._reference_tests_dir) / master_name
         if not (test_dir.exists() and test_dir.is_dir()):
@@ -270,14 +287,17 @@ class JUnit4Hooks(plug.Plugin):
         test_classes = [
             file
             for file in test_dir.rglob("*.java")
-            if file.name.endswith("Test.java") and file.name not in self._ignore_tests
+            if file.name.endswith("Test.java")
+            and file.name not in self._ignore_tests
         ]
 
         if not test_classes:
             res = plug.HookResult(
                 SECTION,
                 Status.WARNING,
-                "no files ending in `Test.java` found in {!s}".format(test_dir),
+                "no files ending in `Test.java` found in {!s}".format(
+                    test_dir
+                ),
             )
             raise _ActException(res)
 
@@ -296,14 +316,20 @@ class JUnit4Hooks(plug.Plugin):
             Status.WARNING: bg("yellow"),
             Status.SUCCESS: bg("dark_green"),
         }
-        test_result_string = lambda status, msg: "{}{}:{} {}".format(
-            backgrounds[status],
-            status,
-            style.RESET,
-            _truncate_lines(msg) if self._verbose else msg,
-        )
+
+        def test_result_string(status, msg):
+            return "{}{}:{} {}".format(
+                backgrounds[status],
+                status,
+                style.RESET,
+                _truncate_lines(msg) if self._verbose else msg,
+            )
+
         return os.linesep.join(
-            [test_result_string(status, msg) for _, status, msg in hook_results]
+            [
+                test_result_string(status, msg)
+                for _, status, msg in hook_results
+            ]
         )
 
     def _run_tests(
@@ -350,9 +376,14 @@ class JUnit4Hooks(plug.Plugin):
             "`{}` is not configured and not on the CLASSPATH variable."
             "This will probably crash."
         )
-        if not (self._hamcrest_path or _junit4_runner.HAMCREST_JAR in self._classpath):
+        if not (
+            self._hamcrest_path
+            or _junit4_runner.HAMCREST_JAR in self._classpath
+        ):
             LOGGER.warning(warn.format(_junit4_runner.HAMCREST_JAR))
-        if not (self._junit_path or _junit4_runner.JUNIT_JAR in self._classpath):
+        if not (
+            self._junit_path or _junit4_runner.JUNIT_JAR in self._classpath
+        ):
             LOGGER.warning(warn.format(_junit4_runner.JUNIT_JAR))
 
         paths = list(paths)
@@ -367,7 +398,9 @@ def _truncate_lines(string: str, max_len: int = DEFAULT_LINE_LIMIT):
     """Truncate lines to max_len characters."""
     trunc_msg = " #[...]# "
     if max_len <= len(trunc_msg):
-        raise ValueError("max_len must be greater than {}".format(len(trunc_msg)))
+        raise ValueError(
+            "max_len must be greater than {}".format(len(trunc_msg))
+        )
 
     effective_len = max_len - len(trunc_msg)
     head_len = effective_len // 2
@@ -378,4 +411,6 @@ def _truncate_lines(string: str, max_len: int = DEFAULT_LINE_LIMIT):
             return s[:head_len] + trunc_msg + s[-tail_len:]
         return s
 
-    return os.linesep.join([truncate(line) for line in string.split(os.linesep)])
+    return os.linesep.join(
+        [truncate(line) for line in string.split(os.linesep)]
+    )

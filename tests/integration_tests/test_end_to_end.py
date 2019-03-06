@@ -14,7 +14,6 @@ import pathlib
 import shutil
 import tempfile
 import os
-from configparser import ConfigParser
 from collections import namedtuple
 from functools import partial
 
@@ -66,15 +65,21 @@ DEFAULT_PACKAGED_CODE_REPO = REPO_DIR / "default-packaged-code"
 NO_DIR_STRUCTURE_REPO = REPO_DIR / "no-dir-structure-packaged-code"
 MULTIPLE_PACKAGES_REPO = REPO_DIR / "student-multiple-packages"
 UNAUTHORIZED_READ_FILE_REPO = REPO_DIR / "unauthorized-read-file-week-10"
-UNAUTHORIZED_NETWORK_ACCESS_REPO = REPO_DIR / "unauthorized-network-access-week-10"
+UNAUTHORIZED_NETWORK_ACCESS_REPO = (
+    REPO_DIR / "unauthorized-network-access-week-10"
+)
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_TEST_DIR_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_TESTS_REPO.exists(), "test pre-requisite error, dir must exist"
-assert NO_MASTER_MATCH_REPO.exists(), "test pre-requisite error, dir must exist"
+assert (
+    NO_MASTER_MATCH_REPO.exists()
+), "test pre-requisite error, dir must exist"
 assert COMPILE_ERROR_REPO.exists(), "test pre-requisite error, dir must exist"
-assert DIR_PATHS_WITH_SPACES.exists(), "test pre-reference error, dir must exit"
+assert (
+    DIR_PATHS_WITH_SPACES.exists()
+), "test pre-reference error, dir must exit"
 assert ABSTRACT_TEST_REPO.exists(), "test pre-reference error, dir must exit"
 
 JUNIT_PATH = str(envvars.JUNIT_PATH)
@@ -85,48 +90,6 @@ IGNORE_TESTS = ["FiboTest"]
 CLASSPATH = "some-stuf:nice/path:path/to/unimportant/lib.jar"
 
 CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
-
-
-@pytest.fixture
-def junit4_hooks():
-    return junit4.JUnit4Hooks()
-
-
-@pytest.fixture
-def full_args():
-    """Return a filled Args instance."""
-    return Args(
-        master_repo_names=MASTER_REPO_NAMES,
-        reference_tests_dir=RTD,
-        ignore_tests=IGNORE_TESTS,
-        hamcrest_path=HAMCREST_PATH,
-        junit_path=JUNIT_PATH,
-        verbose=False,
-        disable_security=False,
-    )
-
-
-@pytest.fixture
-def full_config_parser():
-    parser = ConfigParser()
-    parser[junit4.SECTION] = dict(
-        hamcrest_path=HAMCREST_PATH, junit_path=JUNIT_PATH, reference_tests_dir=RTD
-    )
-    return parser
-
-
-@pytest.fixture(autouse=True)
-def getenv_empty_classpath(mocker):
-    """Classpath must be empty by default for tests to run as expected."""
-    side_effect = lambda name: None if name == "CLASSPATH" else os.getenv(name)
-    getenv_mock = mocker.patch("os.getenv", autospec=True, side_effect=side_effect)
-    return getenv_mock
-
-
-@pytest.fixture
-def getenv_with_classpath(getenv_empty_classpath):
-    side_effect = lambda name: CLASSPATH if name == "CLASSPATH" else os.getenv(name)
-    getenv_empty_classpath.side_effect = side_effect
 
 
 def setup_hooks(
@@ -167,7 +130,9 @@ class TestActOnClonedRepo:
         return setup_hooks()
 
     def test_with_abstract_test_class(self, default_hooks):
-        """Test running the plugin when the reference tests include an abstract test class."""
+        """Test running the plugin when the reference tests include an abstract
+        test class.
+        """
         result = default_hooks.act_on_cloned_repo(ABSTRACT_TEST_REPO)
 
         assert result.status == Status.SUCCESS
@@ -198,7 +163,7 @@ Expected: is <false>
 2) oneIsNotPrime(PrimeCheckerTest)
 java.lang.AssertionError: 
 Expected: is <false>
-     but: was <true>"""
+     but: was <true>"""  # noqa: W291
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 
@@ -299,9 +264,13 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class se.repomate.fibo.FiboTest passed!" in str(result.msg)
+        assert "Test class se.repomate.fibo.FiboTest passed!" in str(
+            result.msg
+        )
 
-    def test_error_when_student_code_is_incorrectly_packaged(self, default_hooks):
+    def test_error_when_student_code_is_incorrectly_packaged(
+        self, default_hooks
+    ):
         """Test that a test class expecting a package errors out when the
         directory structure in the student repo does not correspond to the
         package statement in the test class.
@@ -332,7 +301,9 @@ Expected: is <false>
         """Test that acting on a repo when the hamcrest and junit jars are only
         specified on the classpath works as intended.
         """
-        hooks = setup_hooks(hamcrest_path="", junit_path="", classpath=classpath)
+        hooks = setup_hooks(
+            hamcrest_path="", junit_path="", classpath=classpath
+        )
 
         result = hooks.act_on_cloned_repo(SUCCESS_REPO)
 
@@ -356,7 +327,9 @@ Expected: is <false>
         assert all([len(line) <= line_length for line in lines[1:]])
 
     def test_very_verbose_output_not_truncated(self, monkeypatch):
-        """Test that long lines are not truncated when running with --very-verbose."""
+        """Test that long lines are not truncated when running with
+        --very-verbose.
+        """
         hooks = setup_hooks(very_verbose=True)
         line_length = 20
         monkeypatch.setattr(
@@ -387,7 +360,9 @@ class TestSecurityPolicy:
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
         assert result.status == Status.ERROR
-        assert "java.security.AccessControlException: access denied" in result.msg
+        assert (
+            "java.security.AccessControlException: access denied" in result.msg
+        )
 
     def test_error_on_unauthorized_network_access(self):
         """Test that the default security policy blocks network access."""
@@ -396,7 +371,9 @@ class TestSecurityPolicy:
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_NETWORK_ACCESS_REPO)
 
         assert result.status == Status.ERROR
-        assert "java.security.AccessControlException: access denied" in result.msg
+        assert (
+            "java.security.AccessControlException: access denied" in result.msg
+        )
 
     def test_file_access_allowed_with_disabled_security(self):
         """Test that student code can access files without crashing if security

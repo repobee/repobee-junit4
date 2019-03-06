@@ -1,8 +1,8 @@
 """Utility functions for activities related to Java.
 
-This module contains utility functions dealing with Java-specific behavior, such
-as parsing package statements from Java files and determining if a class is
-abstract.
+This module contains utility functions dealing with Java-specific behavior,
+such as parsing package statements from Java files and determining if a class
+is abstract.
 
 .. module:: _java
     :synopsis: Utility functions for activities related to Java.
@@ -34,7 +34,9 @@ def is_abstract_class(class_: pathlib.Path) -> bool:
     assert class_.name.endswith(".java")
     regex = r"^\s*?(public\s+)?abstract\s+class\s+{}".format(class_.name[:-5])
     match = re.search(
-        regex, class_.read_text(encoding=sys.getdefaultencoding()), flags=re.MULTILINE
+        regex,
+        class_.read_text(encoding=sys.getdefaultencoding()),
+        flags=re.MULTILINE,
     )
     return match is not None
 
@@ -83,7 +85,11 @@ def fqn(package_name: str, class_name: str) -> str:
     Returns:
         The fully qualified name of the class.
     """
-    return class_name if not package_name else "{}.{}".format(package_name, class_name)
+    return (
+        class_name
+        if not package_name
+        else "{}.{}".format(package_name, class_name)
+    )
 
 
 def properly_packaged(path: pathlib.Path, package: str) -> bool:
@@ -129,7 +135,9 @@ def javac(
         the message describes the outcome in plain text.
     """
     command = ["javac", "-cp", classpath, *[str(path) for path in java_files]]
-    proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
 
     if proc.returncode != 0:
         status = Status.ERROR
@@ -142,7 +150,9 @@ def javac(
 
 
 def pairwise_compile(
-    test_classes: List[pathlib.Path], java_files: List[pathlib.Path], classpath: str
+    test_classes: List[pathlib.Path],
+    java_files: List[pathlib.Path],
+    classpath: str,
 ) -> Tuple[List[plug.HookResult], List[plug.HookResult]]:
     """Compile test classes with their associated production classes.
 
@@ -162,7 +172,9 @@ def pairwise_compile(
     failed = []
     succeeded = []
     # only use concrete test classes
-    concrete_test_classes = filter(lambda t: not is_abstract_class(t), test_classes)
+    concrete_test_classes = filter(
+        lambda t: not is_abstract_class(t), test_classes
+    )
     for test_class in concrete_test_classes:
         status, msg, prod_class_path = _pairwise_compile(
             test_class, classpath, java_files
@@ -180,7 +192,9 @@ def _pairwise_compile(test_class, classpath, java_files):
     counterpoint (if it can be found). Return a tuple of (status, msg).
     """
     package = extract_package(test_class)
-    potential_prod_classes = _get_matching_prod_classes(test_class, package, java_files)
+    potential_prod_classes = _get_matching_prod_classes(
+        test_class, package, java_files
+    )
 
     if len(potential_prod_classes) != 1:
         status = Status.ERROR
