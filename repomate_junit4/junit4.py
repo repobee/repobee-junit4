@@ -15,15 +15,11 @@ discovered in student repositories. See the README for more details.
 
 .. moduleauthor:: Simon Larsén
 """
-import subprocess
 import itertools
-import sys
 import os
 import argparse
 import configparser
-import re
 import pathlib
-import tempfile
 from typing import Union, Iterable, Tuple, List
 
 import daiquiri
