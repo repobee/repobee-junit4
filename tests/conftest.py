@@ -11,5 +11,7 @@ if JUNIT_PATH.name != JUNIT_JAR:
 if HAMCREST_PATH.name != HAMCREST_JAR:
     raise RuntimeError(
         "test suite requires the env variable "
-        "REPOMATE_JUNIT4_HAMCREST to contain the path to `{}`".format(HAMCREST_JAR)
+        "REPOMATE_JUNIT4_HAMCREST to contain the path to `{}`".format(
+            HAMCREST_JAR
+        )
     )

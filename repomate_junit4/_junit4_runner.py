@@ -36,14 +36,17 @@ def security_policy(classpath: str, active: bool):
     """
     if not active:
         LOGGER.warning(
-            "Security policy disabled, student code running without restrictions"
+            "Security policy disabled, student code running without "
+            "restrictions"
         )
         yield
         return
 
     with tempfile.NamedTemporaryFile() as security_policy_file:
         policy = _generate_default_security_policy(classpath)
-        security_policy_file.write(policy.encode(encoding=sys.getdefaultencoding()))
+        security_policy_file.write(
+            policy.encode(encoding=sys.getdefaultencoding())
+        )
         security_policy_file.flush()
         yield pathlib.Path(security_policy_file.name)
 
@@ -53,7 +56,9 @@ def _generate_default_security_policy(classpath: str) -> str:
     must be on the classpath.
     """
     escaped_junit_jar = JUNIT_JAR.replace(".", r"\.")
-    pattern = "[^{sep}]*{junit_jar}".format(sep=os.pathsep, junit_jar=escaped_junit_jar)
+    pattern = "[^{sep}]*{junit_jar}".format(
+        sep=os.pathsep, junit_jar=escaped_junit_jar
+    )
     junit_jar_matches = re.search(pattern, classpath)
     if not junit_jar_matches:
         raise ValueError("{} not on the classpath".format(JUNIT_JAR))
@@ -72,7 +77,9 @@ def get_num_failed(test_output: bytes) -> int:
 def parse_failed_tests(test_output: bytes) -> str:
     """Return a list of test failure descriptions, excluding stack traces."""
     decoded = test_output.decode(encoding=sys.getdefaultencoding())
-    return re.findall(r"^\d\) .*(?:\n(?!\s+at).*)*", decoded, flags=re.MULTILINE)
+    return re.findall(
+        r"^\d\) .*(?:\n(?!\s+at).*)*", decoded, flags=re.MULTILINE
+    )
 
 
 def _extract_conforming_package(test_class, prod_class):
@@ -85,7 +92,7 @@ def _extract_conforming_package(test_class, prod_class):
 
     if test_package != prod_package:
         msg = (
-            "Test class {} in package {}, but production class {} in package {}"
+            "Test class {} in package {}, but class {} in package {}"
         ).format(test_class.name, test_package, prod_class.name, prod_package)
         raise ValueError(msg)
 
@@ -114,7 +121,9 @@ def run_test_class(
     prod_class_dir = _java.extract_package_root(prod_class, package)
     test_class_dir = _java.extract_package_root(test_class, package)
 
-    test_class_name = test_class.name[: -len(test_class.suffix)]  # remove .java
+    test_class_name = test_class.name[
+        : -len(test_class.suffix)
+    ]  # remove .java
     test_class_name = _java.fqn(package, test_class_name)
 
     classpath = _java.generate_classpath(
@@ -127,9 +136,16 @@ def run_test_class(
             "-Djava.security.manager",
             "-Djava.security.policy=={!s}".format(security_policy),
         ]
-    command += ["-cp", classpath, "org.junit.runner.JUnitCore", test_class_name]
+    command += [
+        "-cp",
+        classpath,
+        "org.junit.runner.JUnitCore",
+        test_class_name,
+    ]
 
-    proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
 
     return _extract_results(proc, test_class_name, verbose)
 
@@ -144,7 +160,9 @@ def _extract_results(
             test_class_name, get_num_failed(proc.stdout)
         )
         if verbose:
-            msg += os.linesep + os.linesep.join(parse_failed_tests(proc.stdout))
+            msg += os.linesep + os.linesep.join(
+                parse_failed_tests(proc.stdout)
+            )
     else:
         msg = "Test class {} passed!".format(test_class_name)
         status = Status.SUCCESS

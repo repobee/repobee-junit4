@@ -108,7 +108,9 @@ def full_args():
 def full_config_parser():
     parser = ConfigParser()
     parser[junit4.SECTION] = dict(
-        hamcrest_path=HAMCREST_PATH, junit_path=JUNIT_PATH, reference_tests_dir=RTD
+        hamcrest_path=HAMCREST_PATH,
+        junit_path=JUNIT_PATH,
+        reference_tests_dir=RTD,
     )
     return parser
 
@@ -117,13 +119,17 @@ def full_config_parser():
 def getenv_empty_classpath(mocker):
     """Classpath must be empty by default for tests to run as expected."""
     side_effect = lambda name: None if name == "CLASSPATH" else os.getenv(name)
-    getenv_mock = mocker.patch("os.getenv", autospec=True, side_effect=side_effect)
+    getenv_mock = mocker.patch(
+        "os.getenv", autospec=True, side_effect=side_effect
+    )
     return getenv_mock
 
 
 @pytest.fixture
 def getenv_with_classpath(getenv_empty_classpath):
-    side_effect = lambda name: CLASSPATH if name == "CLASSPATH" else os.getenv(name)
+    side_effect = (
+        lambda name: CLASSPATH if name == "CLASSPATH" else os.getenv(name)
+    )
     getenv_empty_classpath.side_effect = side_effect
 
 
@@ -160,14 +166,20 @@ class TestParseArgs:
         assert junit4_hooks._junit_path == JUNIT_PATH
         assert junit4_hooks._reference_tests_dir == RTD
 
-    def test_defaults_are_kept_if_not_specified_in_args(self, junit4_hooks, full_args):
+    def test_defaults_are_kept_if_not_specified_in_args(
+        self, junit4_hooks, full_args
+    ):
         """Test that defaults are not overwritten if they are falsy in the
         args.
         """
         args = Args(master_repo_names=MASTER_REPO_NAMES)
         expected_ignore_tests = ["some", "tests"]
-        expected_hamcrest_path = "some/path/to/{}".format(_junit4_runner.HAMCREST_JAR)
-        expected_junit_path = "other/path/to/{}".format(_junit4_runner.JUNIT_JAR)
+        expected_hamcrest_path = "some/path/to/{}".format(
+            _junit4_runner.HAMCREST_JAR
+        )
+        expected_junit_path = "other/path/to/{}".format(
+            _junit4_runner.JUNIT_JAR
+        )
         expected_rtd = RTD
         expected_disable_security = False
 
@@ -243,10 +255,14 @@ class TestCloneParserHook:
         assert args.hamcrest_path == HAMCREST_PATH
         assert args.junit_path == JUNIT_PATH
         assert args.verbose == (False if verbose is None else verbose)
-        assert args.very_verbose == (False if very_verbose is None else very_verbose)
+        assert args.very_verbose == (
+            False if very_verbose is None else very_verbose
+        )
 
     def test_verbose_and_very_verbose_mutually_exclusive(self, junit4_hooks):
-        """Test that verbose and very_verbose can't both be true at the same time."""
+        """Test that verbose and very_verbose can't both be true at the same
+        time.
+        """
         parser = ArgumentParser()
         sys_args = [
             "-rtd",
@@ -303,7 +319,9 @@ class TestCloneParserHook:
         hooks.clone_parser_hook(arg_parser)
         arg_parser.parse_args(sys_args)  # should not crash!
 
-    def test_args_not_required_if_in_config(self, junit4_hooks, full_config_parser):
+    def test_args_not_required_if_in_config(
+        self, junit4_hooks, full_config_parser
+    ):
         """Test that junit, hamcrest and rtd args are not required if they are
         in the config.
         """
