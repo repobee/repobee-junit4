@@ -36,6 +36,7 @@ Args = namedtuple(
         "hamcrest_path",
         "junit_path",
         "verbose",
+        "very_verbose",
         "disable_security",
     ),
 )
@@ -55,12 +56,16 @@ MASTER_REPO_NAMES = (
 )
 
 
+# default values for CLI args
 JUNIT_PATH = str(envvars.JUNIT_PATH)
 HAMCREST_PATH = str(envvars.HAMCREST_PATH)
 
 RTD = str(CUR_DIR / "reference-tests")
 IGNORE_TESTS = ["FiboTest"]
 CLASSPATH = "some-stuf:nice/path:path/to/unimportant/lib.jar"
+VERBOSE = False
+VERY_VERBOSE = False
+DISABLE_SECURITY = False
 
 CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
 
@@ -70,18 +75,33 @@ def junit4_hooks():
     return junit4.JUnit4Hooks()
 
 
+def setup_args(
+    master_repo_names=MASTER_REPO_NAMES,
+    reference_tests_dir=RTD,
+    ignore_tests=IGNORE_TESTS,
+    hamcrest_path=HAMCREST_PATH,
+    junit_path=JUNIT_PATH,
+    verbose=VERBOSE,
+    very_verbose=VERY_VERBOSE,
+    disable_security=DISABLE_SECURITY,
+):
+    """Return an Args instance with the specified values."""
+    return Args(
+        master_repo_names=master_repo_names,
+        reference_tests_dir=reference_tests_dir,
+        ignore_tests=ignore_tests,
+        junit_path=junit_path,
+        hamcrest_path=hamcrest_path,
+        verbose=verbose,
+        very_verbose=very_verbose,
+        disable_security=disable_security,
+    )
+
+
 @pytest.fixture
 def full_args():
     """Return a filled Args instance."""
-    return Args(
-        master_repo_names=MASTER_REPO_NAMES,
-        reference_tests_dir=RTD,
-        ignore_tests=IGNORE_TESTS,
-        hamcrest_path=HAMCREST_PATH,
-        junit_path=JUNIT_PATH,
-        verbose=False,
-        disable_security=False,
-    )
+    return setup_args()
 
 
 @pytest.fixture
@@ -119,7 +139,9 @@ class TestParseArgs:
         assert junit4_hooks._ignore_tests == IGNORE_TESTS
         assert junit4_hooks._hamcrest_path == HAMCREST_PATH
         assert junit4_hooks._junit_path == JUNIT_PATH
-        assert junit4_hooks._disable_security == False
+        assert junit4_hooks._verbose == VERBOSE
+        assert junit4_hooks._very_verbose == VERY_VERBOSE
+        assert junit4_hooks._disable_security == DISABLE_SECURITY
 
     def test_defaults_are_overwritten(self, junit4_hooks, full_args):
         """Test that ignore_tests, hamcrest_path and junit_path are all
@@ -188,8 +210,10 @@ class TestConfigHook:
 
 
 class TestCloneParserHook:
-    @pytest.mark.parametrize("verbose", (None, False, True))
-    def test_arguments_get_added(self, junit4_hooks, verbose):
+    @pytest.mark.parametrize(
+        "verbose, very_verbose", [(None, None), (False, True), (True, False)]
+    )
+    def test_arguments_get_added(self, junit4_hooks, verbose, very_verbose):
         """Just test that `-rtd`, `-i`, `-ham` and `-junit` get added
         correctly and that the args can then be parsed as expected.
         """
@@ -207,6 +231,8 @@ class TestCloneParserHook:
 
         if verbose:
             sys_args += ["-v"]
+        if very_verbose:
+            sys_args += ["-vv"]
 
         junit4_hooks.clone_parser_hook(parser)
 
@@ -217,6 +243,26 @@ class TestCloneParserHook:
         assert args.hamcrest_path == HAMCREST_PATH
         assert args.junit_path == JUNIT_PATH
         assert args.verbose == (False if verbose is None else verbose)
+        assert args.very_verbose == (False if very_verbose is None else very_verbose)
+
+    def test_verbose_and_very_verbose_mutually_exclusive(self, junit4_hooks):
+        """Test that verbose and very_verbose can't both be true at the same time."""
+        parser = ArgumentParser()
+        sys_args = [
+            "-rtd",
+            RTD,
+            "-ham",
+            HAMCREST_PATH,
+            "-junit",
+            JUNIT_PATH,
+            "--verbose",
+            "--very-verbose",
+        ]
+
+        junit4_hooks.clone_parser_hook(parser)
+
+        with pytest.raises(SystemExit) as e:
+            parser.parse_args(sys_args)
 
     @pytest.mark.parametrize("skip_arg", ["ham", "junit", "rtd"])
     def test_args_required_if_undefined(self, junit4_hooks, skip_arg):
