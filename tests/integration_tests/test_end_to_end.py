@@ -16,6 +16,7 @@ import tempfile
 import os
 from configparser import ConfigParser
 from collections import namedtuple
+from functools import partial
 
 import pytest
 
@@ -136,6 +137,7 @@ def setup_hooks(
     hamcrest_path=HAMCREST_PATH,
     junit_path=JUNIT_PATH,
     verbose=False,
+    very_verbose=False,
     disable_security=False,
 ):
     """Return an instance of JUnit4Hooks with pre-configured arguments."""
@@ -147,6 +149,7 @@ def setup_hooks(
     hooks._hamcrest_path = hamcrest_path
     hooks._junit_path = junit_path
     hooks._verbose = verbose
+    hooks._very_verbose = very_verbose
     hooks._disable_security = disable_security
     return hooks
 
@@ -334,6 +337,40 @@ Expected: is <false>
         result = hooks.act_on_cloned_repo(SUCCESS_REPO)
 
         assert result.status == Status.SUCCESS
+
+    def test_verbose_output_is_truncated(self, monkeypatch):
+        """Test that long lines are truncated when running --verbose."""
+        hooks = setup_hooks(verbose=True)
+        line_length = 20
+        monkeypatch.setattr(
+            "repomate_junit4.junit4._truncate_lines",
+            partial(junit4._truncate_lines, max_len=line_length),
+        )
+
+        result = hooks.act_on_cloned_repo(FAIL_REPO)
+
+        lines = result.msg.split(os.linesep)
+        assert len(lines) > 1
+        # the first line can be somewhat longer due to staus message
+        # and color codes
+        assert all([len(line) <= line_length for line in lines[1:]])
+
+    def test_very_verbose_output_not_truncated(self, monkeypatch):
+        """Test that long lines are not truncated when running with --very-verbose."""
+        hooks = setup_hooks(very_verbose=True)
+        line_length = 20
+        monkeypatch.setattr(
+            "repomate_junit4.junit4._truncate_lines",
+            partial(junit4._truncate_lines, max_len=line_length),
+        )
+
+        result = hooks.act_on_cloned_repo(FAIL_REPO)
+
+        lines = result.msg.split(os.linesep)
+        assert len(lines) > 1
+        # the first line can be somewhat longer due to staus message
+        # and color codes
+        assert any([len(line) > line_length for line in lines[1:]])
 
 
 class TestSecurityPolicy:
