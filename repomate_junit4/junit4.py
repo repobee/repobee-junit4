@@ -56,7 +56,7 @@ class JUnit4Hooks(plug.Plugin):
         self._ignore_tests = []
         self._hamcrest_path = ""
         self._junit_path = ""
-        self._classpath = ""
+        self._classpath = os.getenv("CLASSPATH") or ""
         self._verbose = False
         self._very_verbose = False
         self._disable_security = False
@@ -204,7 +204,6 @@ class JUnit4Hooks(plug.Plugin):
         self._reference_tests_dir = config_parser.get(
             SECTION, "reference_tests_dir", fallback=self._reference_tests_dir
         )
-        self._classpath = os.getenv("CLASSPATH") or ""
 
     def _compile_all(
         self, path: pathlib.Path

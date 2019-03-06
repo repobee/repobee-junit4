@@ -188,7 +188,7 @@ class TestParseArgs:
 
 class TestConfigHook:
     def test_with_full_config(
-        self, junit4_hooks, getenv_with_classpath, full_config_parser
+        self, getenv_with_classpath, junit4_hooks, full_config_parser
     ):
         junit4_hooks.config_hook(full_config_parser)
 
@@ -196,7 +196,7 @@ class TestConfigHook:
         assert junit4_hooks._junit_path == JUNIT_PATH
         assert junit4_hooks._classpath == CLASSPATH
 
-    def test_with_empty_config(self, junit4_hooks, getenv_with_classpath):
+    def test_with_empty_config(self, getenv_with_classpath, junit4_hooks):
         expected_junit = junit4_hooks._junit_path
         expected_hamcrest = junit4_hooks._hamcrest_path
 
@@ -285,7 +285,7 @@ class TestCloneParserHook:
             parser.parse_args(sys_args)
 
     def test_hamcrest_and_junit_not_required_if_on_classpath(
-        self, junit4_hooks, getenv_empty_classpath
+        self, getenv_empty_classpath
     ):
         """Just checks that there is no chrash."""
         config_parser = ConfigParser()
@@ -296,10 +296,11 @@ class TestCloneParserHook:
         )
 
         # this is where the classpath is picked up, still setup!
-        junit4_hooks.config_hook(config_parser)
+        hooks = junit4.JUnit4Hooks()
+        hooks.config_hook(config_parser)
 
         # this is the actual test
-        junit4_hooks.clone_parser_hook(arg_parser)
+        hooks.clone_parser_hook(arg_parser)
         arg_parser.parse_args(sys_args)  # should not crash!
 
     def test_args_not_required_if_in_config(self, junit4_hooks, full_config_parser):
