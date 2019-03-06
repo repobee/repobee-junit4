@@ -14,7 +14,6 @@ import pathlib
 import shutil
 import tempfile
 import os
-from configparser import ConfigParser
 from collections import namedtuple
 from functools import partial
 
@@ -93,54 +92,6 @@ CLASSPATH = "some-stuf:nice/path:path/to/unimportant/lib.jar"
 CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
 
 
-@pytest.fixture
-def junit4_hooks():
-    return junit4.JUnit4Hooks()
-
-
-@pytest.fixture
-def full_args():
-    """Return a filled Args instance."""
-    return Args(
-        master_repo_names=MASTER_REPO_NAMES,
-        reference_tests_dir=RTD,
-        ignore_tests=IGNORE_TESTS,
-        hamcrest_path=HAMCREST_PATH,
-        junit_path=JUNIT_PATH,
-        verbose=False,
-        disable_security=False,
-    )
-
-
-@pytest.fixture
-def full_config_parser():
-    parser = ConfigParser()
-    parser[junit4.SECTION] = dict(
-        hamcrest_path=HAMCREST_PATH,
-        junit_path=JUNIT_PATH,
-        reference_tests_dir=RTD,
-    )
-    return parser
-
-
-@pytest.fixture(autouse=True)
-def getenv_empty_classpath(mocker):
-    """Classpath must be empty by default for tests to run as expected."""
-    side_effect = lambda name: None if name == "CLASSPATH" else os.getenv(name)
-    getenv_mock = mocker.patch(
-        "os.getenv", autospec=True, side_effect=side_effect
-    )
-    return getenv_mock
-
-
-@pytest.fixture
-def getenv_with_classpath(getenv_empty_classpath):
-    side_effect = (
-        lambda name: CLASSPATH if name == "CLASSPATH" else os.getenv(name)
-    )
-    getenv_empty_classpath.side_effect = side_effect
-
-
 def setup_hooks(
     reference_tests_dir=RTD,
     master_repo_names=MASTER_REPO_NAMES,
@@ -212,7 +163,7 @@ Expected: is <false>
 2) oneIsNotPrime(PrimeCheckerTest)
 java.lang.AssertionError: 
 Expected: is <false>
-     but: was <true>"""
+     but: was <true>"""  # noqa: W291
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 

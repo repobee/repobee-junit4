@@ -118,7 +118,10 @@ def full_config_parser():
 @pytest.fixture(autouse=True)
 def getenv_empty_classpath(mocker):
     """Classpath must be empty by default for tests to run as expected."""
-    side_effect = lambda name: None if name == "CLASSPATH" else os.getenv(name)
+
+    def side_effect(name):
+        return None if name == "CLASSPATH" else os.getenv(name)
+
     getenv_mock = mocker.patch(
         "os.getenv", autospec=True, side_effect=side_effect
     )
@@ -277,7 +280,7 @@ class TestCloneParserHook:
 
         junit4_hooks.clone_parser_hook(parser)
 
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(SystemExit):
             parser.parse_args(sys_args)
 
     @pytest.mark.parametrize("skip_arg", ["ham", "junit", "rtd"])
@@ -325,7 +328,6 @@ class TestCloneParserHook:
         """Test that junit, hamcrest and rtd args are not required if they are
         in the config.
         """
-        args = Args(master_repo_names=MASTER_REPO_NAMES)
         junit4_hooks.config_hook(full_config_parser)
         parser = ArgumentParser()
         junit4_hooks.clone_parser_hook(parser)

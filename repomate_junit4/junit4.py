@@ -167,7 +167,7 @@ class JUnit4Hooks(plug.Plugin):
             type=str,
             # required if not picked up in config_hook nor on classpath
             required=not self._hamcrest_path
-            and not _junit4_runner.HAMCREST_JAR in self._classpath,
+            and _junit4_runner.HAMCREST_JAR not in self._classpath,
         )
 
         clone_parser.add_argument(
@@ -179,7 +179,7 @@ class JUnit4Hooks(plug.Plugin):
             type=str,
             # required if not picked up in config_hook nor on classpath
             required=not self._junit_path
-            and not _junit4_runner.JUNIT_JAR in self._classpath,
+            and _junit4_runner.JUNIT_JAR not in self._classpath,
         )
 
         clone_parser.add_argument(
@@ -316,12 +316,15 @@ class JUnit4Hooks(plug.Plugin):
             Status.WARNING: bg("yellow"),
             Status.SUCCESS: bg("dark_green"),
         }
-        test_result_string = lambda status, msg: "{}{}:{} {}".format(
-            backgrounds[status],
-            status,
-            style.RESET,
-            _truncate_lines(msg) if self._verbose else msg,
-        )
+
+        def test_result_string(status, msg):
+            return "{}{}:{} {}".format(
+                backgrounds[status],
+                status,
+                style.RESET,
+                _truncate_lines(msg) if self._verbose else msg,
+            )
+
         return os.linesep.join(
             [
                 test_result_string(status, msg)
