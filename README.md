@@ -128,6 +128,9 @@ with `--disable-security`.
     - Disable the seurity policy.
 * `-v|--verbose`
     - Display more verbose information (currently only concerns test failures).
+    - Long lines are truncated.
+* `-vv|--very-verbose`
+    - Same as `-v`, but without truncation.
 
 ### Configuration file
 First and foremost, `junit4` must be added to the `plugins` option under the
