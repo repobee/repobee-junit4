@@ -1,4 +1,4 @@
-# `repomate-junit4`, a JUnit 4.12 test runner plugin for `repomate`
+# `repomate-junit4`, a JUnit 4.12 test runner plugin for [Repomate](https://github.com/slarse/repomate)
 
 [![Build Status](https://travis-ci.com/slarse/repomate-junit4.svg?token=1VKcbDz66bMbTdt1ebsN&branch=master)](https://travis-ci.com/slarse/repomate-junit4)
 [![Code Coverage](https://codecov.io/gh/slarse/repomate-junit4/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repomate-junit4)
@@ -37,12 +37,12 @@ The recommended way to install `repomate-junit4` is with `pip`.
 python3 -m pip install --user repomate-junit4
 ```
 
-The plugin itself does not actually require `repomate`, but it is fairly
-useless without. If `repomate` and `repomate-junit4` are both installed in the
-same environment, then `repomate` should just find `repomate-junit4`.
-For `repomate` to actually use `repomate-junit4`, it must be configured
-in the `repomate` configuration file. Refer to the
-[`repomate` docs](https://repomate.readthedocs.io/en/latest/configuration.html)
+The plugin itself does not actually require Repomate, but it is fairly
+useless without. If Repomate and `repomate-junit4` are both installed in the
+same environment, then Repomate should just find `repomate-junit4`.
+For Repomate to actually use `repomate-junit4`, it must be configured
+in the Repomate configuration file. Refer to the
+[Repomate docs](https://repomate.readthedocs.io/en/latest/configuration.html)
 for information on the configuration file and its expected location, and the
 [Configuration file](#configuration-file) section here for info on what you
 need to add to it.
@@ -50,7 +50,7 @@ need to add to it.
 ## Usage
 
 ### Terminology and conventions
-This is terminology added in excess to that which is defined in the [`repomate`
+This is terminology added in excess to that which is defined in the [Repomate
 docs](https://repomate.readthedocs.io/en/latest/fundamentals.html#terminology).
 For brevity, some conventions expected by `repomate-junit4` are baked into
 these definitions.
@@ -138,7 +138,7 @@ First and foremost, `junit4` must be added to the `plugins` option under the
 [see details here](https://repomate.readthedocs.io/en/latest/plugins.html#using-existing-plugins).
 The `--hamcrest-path`, `--junit-path` and `--reference-tests-dir` arguments can
 be configured in the standard
-[`repomate` configuration file](https://repomate.readthedocs.io/en/latest/configuration.html)
+[Repomate configuration file](https://repomate.readthedocs.io/en/latest/configuration.html)
 by adding the `[junit4]` section heading. Example:
 
 ```bash
