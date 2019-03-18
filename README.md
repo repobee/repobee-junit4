@@ -17,23 +17,23 @@ A summary report is then printed to the logfile and terminal. By default, the
 plugin will only report which test classes failed (and how many tests), but it
 is possible to ask for more verbose output which includes detailed information
 about each test failure. See this
-[example use case](https://repomate-junit4.readthedocs.io/usage.html#example-use-case)
+[example use case](https://repomate-junit4.readthedocs.io/en/latest/usage.html#example-use-case)
 for a more detailed look at how it works.
 
 ### Install
 `repomate-junit4` is on PyPi, so `python3 -m pip install repomate-junit4` should do the
 trick. See the
-[install instructions](https://repomate-junit4.readthedocs.io/install.html)
+[install instructions](https://repomate-junit4.readthedocs.io/en/latest/install.html)
 for more elaborate instructions.
 
 ### Getting started
 The best way to get started with `repomate-junit4` is to head over to the
 [Docs](https://repomate-junit4.readthedocs.io), where you (among
 other things) will find
-[install instructions](https://repomate-junit4.readthedocs.io/install.html)
-and [usage instructions](https://repomate-junit4.readthedocs.io/usage.html).
+[install instructions](https://repomate-junit4.readthedocs.io/en/latest/install.html)
+and [usage instructions](https://repomate-junit4.readthedocs.io/en/latest/usage.html).
 The latter includes an
-[example use case](https://repomate-junit4.readthedocs.io/usage.html#example-use-case)
+[example use case](https://repomate-junit4.readthedocs.io/en/latest/usage.html#example-use-case)
 which hopefully proves useful in clarifying how `repomate-junit4` is supposed to
 be used.
 
