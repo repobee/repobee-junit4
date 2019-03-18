@@ -61,4 +61,109 @@ command.
 * ``-vv|--very-verbose``
     - Same as ``-v``, but without truncation.
 
+.. _use case:
+
+Example use case
+----------------
+Assume that we have a master repo called *fibonacci* with an assignment to
+implement a method that returns the n:th Fibonacci number. The master repo
+could then look like this:
+
+.. code-block:: bash
+
+   fibonacci
+   ├── README.md
+   └── src
+       └── Fibo.java
+
+To be able to test the students' implementations, we write a test class
+``FiboTest.java`` and put it in our reference tests directory, in a test
+directory named after the master repository. The reference test directory would
+then look like this.
+
+.. code-block:: bash
+
+   reference_tests
+   └── fibonacci
+       └── FiboTest.java
+
+.. note::
+
+   I strongly recommend having the reference tests in version control.
+
+Now, assume that we have students *ham*, *spam* and *eggs*, and their student
+repos *ham-fibonacci*, *spam-fibonacci* and *eggs-fibonacci*. Assuming that the
+JUnit4 and Hamcrest jars have been configured as suggested in :ref:`config`,
+and that the basic Repomate arguments are configured (see the `Repomate config
+docs`_), we can run ``repomate clone`` with ``repomate-junit4`` activated like
+this:
+
+.. code-block:: none
+
+   $ repomate -p junit4 clone -mn fibonacci -s ham spam eggs -rtd /path/to/reference_tests
+   [INFO] cloning into student repos ...
+   [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/ham-fibonacci
+   [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/spam-fibonacci
+   [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/eggs-fibonacci
+   [INFO] executing post clone hooks on repos
+   [INFO] executing post clone hooks on eggs-fibonacci
+   [INFO] executing post clone hooks on spam-fibonacci
+   [INFO] executing post clone hooks on ham-fibonacci
+   [INFO]
+   hook results for spam-fibonacci
+
+   junit4: SUCCESS
+   Status.SUCCESS: Test class FiboTest passed!
+
+
+   hook results for eggs-fibonacci
+
+
+   junit4: ERROR
+   Status.ERROR: multiple production classes found for FiboTest.java
+
+
+   hook results for ham-fibonacci
+
+   junit4: ERROR
+   Status.ERROR: Test class FiboTest failed 1 tests
+
+
+   [INFO] post clone hooks done
+
+.. note::
+
+   The output is color coded when displayed in a terminal.
+
+
+Let's digest what happened here. We provided the master repo name (``-mn
+fibonacci``) and the reference tests directory (``-rtd
+/path/to/reference_tests``). ``repomate-junit4`` then looked in the test
+directory matching the master repo name (i.e. *fibonacci*) test directory and
+found a test class ``FiboTest.java``. By the naming convention, it knows that
+it should now look for a file called ``Fibo.java`` in the student repos.  The
+following then happened when testing the repos:
+
+- *spam-fibonacci:* The production class ``Fibo.java`` was found and passed the
+  test class.
+- *eggs-fibonacci:* Multiple files called ``Fibo.java`` were found, and
+  ``repomate-junit4`` did not know which one to use.
+  - Duplicate class names are only allowed if their fully qualified names
+  differ (i.e. the classes are in different packages).  If production code is
+  supposed to be packaged, the test classes must also be packaged (in the
+  same package).
+- *ham-fibonacci:* The production class ``Fibo.java`` was found, but failed one
+  of the tests.
+  - Running the same command again with ``-v`` or ``-vv`` would display which
+  test failed, and why.
+
+Other common causes of errors include:
+
+- No production class found for a test class.
+- Compile error.
+- Security policy violation.
+   - See :ref:`security`.
+
+This concludes the use case example, I hope you found it enlightening.
+
 .. _Repomate config docs: https://repomate.readthedocs.io/en/latest/configuration.html#configuration-file
