@@ -24,9 +24,9 @@ copyright = "2019, Simon Larsén"
 author = "Simon Larsén"
 
 # The short X.Y version
-version = "0.5"
+version = "0.6"
 # The full version, including alpha/beta/rc tags
-release = "0.5.0"
+release = "0.6.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -153,13 +153,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (
-        master_doc,
-        "repobee-junit4",
-        "repobee-junit4 Documentation",
-        [author],
-        1,
-    )
+    (master_doc, "repobee-junit4", "repobee-junit4 Documentation", [author], 1)
 ]
 
 
