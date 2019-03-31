@@ -10,19 +10,19 @@ Requirements
 
    Once you have gone through this section, you should have:
 
-   1. Repomate installed
+   1. RepoBee installed
    2. A JDK (preferably 8+, 7 may work) installed
    3. ``junit-4.12.jar`` and ``hamcest-core-1.3.jar`` downloaded
 
-First of all, make sure that Repomate is installed and up-to-date. For a
-first-time install of Repomate, see the `Repomate install docs`_. If you
-already have Repomate installed, make sure it is up-to-date.
+First of all, make sure that RepoBee is installed and up-to-date. For a
+first-time install of RepoBee, see the `RepoBee install docs`_. If you
+already have RepoBee installed, make sure it is up-to-date.
 
 .. code-block:: bash
 
-   python3 -m pip install --user --upgrade repomate
+   python3 -m pip install --user --upgrade repobee
 
-Furthermore, a JDK must be installed. ``repomate-junit4`` has been extensively
+Furthermore, a JDK must be installed. ``repobee-junit4`` has been extensively
 tested with OpenJDK 8+, but should work well with JDK 7 and later. Make sure
 that:
 
@@ -43,15 +43,15 @@ them manually.
 Install plugin
 --------------
 
-To install ``repomate-junit4``, simply use ``pip`` again.
+To install ``repobee-junit4``, simply use ``pip`` again.
 
 .. code-block:: bash
 
-   python3 -m pip install --user repomate-junit4
+   python3 -m pip install --user repobee-junit4
 
-Repomate should simply be able to find ``repomate-junit4`` if they are both
+RepoBee should simply be able to find ``repobee-junit4`` if they are both
 installed in the same environment. To verify that it is correctly installed,
-run ``repomate -p junit4 clone -h``. You should see some additional command
+run ``repobee -p junit4 clone -h``. You should see some additional command
 line arguments added (such as ``--reference-tests-dir``). See the `Using
 existing plugins`_ for more information on how to use plugins in general,
 and :ref:`usage` for details on this plugin.
@@ -61,9 +61,9 @@ and :ref:`usage` for details on this plugin.
 Configuration
 -------------
 
-Some options for ``repomate-junit4`` can be configured in the `Repomate
+Some options for ``repobee-junit4`` can be configured in the `RepoBee
 configuration file`_ by adding the ``[junit4]`` section. Everything
-``repomate-junit4`` needs to operate *can* be provided on the command line, but
+``repobee-junit4`` needs to operate *can* be provided on the command line, but
 I strongly recommend adding the absolute paths to the ``junit-4.12.jar`` and
 ``hamcrest-core-1.3.jar`` files to the config file. Simply append the following
 to the end of the configuration file.
@@ -80,6 +80,6 @@ to the end of the configuration file.
 
 See :ref:`cli` for a complete list of arguments that can be configured.
 
-.. _Repomate install docs: https://repomate.readthedocs.io/en/latest/install.html
-.. _Repomate configuration file: https://repomate.readthedocs.io/en/latest/configuration.html#configuration-file
-.. _Using existing plugins: https://repomate.readthedocs.io/en/latest/plugins.html#using-existing-plugins
+.. _RepoBee install docs: https://repobee.readthedocs.io/en/latest/install.html
+.. _RepoBee configuration file: https://repobee.readthedocs.io/en/latest/configuration.html#configuration-file
+.. _Using existing plugins: https://repobee.readthedocs.io/en/latest/plugins.html#using-existing-plugins

@@ -9,9 +9,9 @@ from typing import Tuple, Optional
 
 import daiquiri
 
-from repomate_plug import Status
+from repobee_plug import Status
 
-from repomate_junit4 import _java
+from repobee_junit4 import _java
 
 
 LOGGER = daiquiri.getLogger(__file__)

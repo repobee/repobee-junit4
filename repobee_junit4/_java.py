@@ -17,10 +17,10 @@ import subprocess
 
 from typing import Iterable, Tuple, Union, List
 
-import repomate_plug as plug
-from repomate_plug import Status
+import repobee_plug as plug
+from repobee_plug import Status
 
-from repomate_junit4 import SECTION
+from repobee_junit4 import SECTION
 
 
 def is_abstract_class(class_: pathlib.Path) -> bool:

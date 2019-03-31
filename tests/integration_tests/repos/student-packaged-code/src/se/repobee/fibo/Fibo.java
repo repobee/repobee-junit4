@@ -1,4 +1,4 @@
-package com.repomate.fibo;
+package se.repobee.fibo;
 /**
  * Class for calculating Fibonacci numbers.
  */

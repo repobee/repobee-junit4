@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "repomate-junit4"
+project = "repobee-junit4"
 copyright = "2019, Simon Larsén"
 author = "Simon Larsén"
 
@@ -114,7 +114,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "repomate-junit4doc"
+htmlhelp_basename = "repobee-junit4doc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -140,8 +140,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "repomate-junit4.tex",
-        "repomate-junit4 Documentation",
+        "repobee-junit4.tex",
+        "repobee-junit4 Documentation",
         "Simon Larsén",
         "manual",
     )
@@ -155,8 +155,8 @@ latex_documents = [
 man_pages = [
     (
         master_doc,
-        "repomate-junit4",
-        "repomate-junit4 Documentation",
+        "repobee-junit4",
+        "repobee-junit4 Documentation",
         [author],
         1,
     )
@@ -171,10 +171,10 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "repomate-junit4",
-        "repomate-junit4 Documentation",
+        "repobee-junit4",
+        "repobee-junit4 Documentation",
         author,
-        "repomate-junit4",
+        "repobee-junit4",
         "One line description of project.",
         "Miscellaneous",
     )

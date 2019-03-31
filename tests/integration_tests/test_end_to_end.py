@@ -6,9 +6,9 @@
 
         1. ``javac`` must be installed.
         2. A path to ``hamcrest-core-1.3.jar`` must be in the environment
-        variable REPOMATE_JUNIT4_HAMCREST.
+        variable REPOBEE_JUNIT4_HAMCREST.
         3. A path to ``junit-4.12.jar`` must be in the environment variable
-        REPOMATE_JUNIT4_JUNIT.
+        REPOBEE_JUNIT4_JUNIT.
 """
 import pathlib
 import shutil
@@ -19,8 +19,8 @@ from functools import partial
 
 import pytest
 
-from repomate_plug import Status
-from repomate_junit4 import junit4
+from repobee_plug import Status
+from repobee_junit4 import junit4
 
 import envvars
 
@@ -264,7 +264,7 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class se.repomate.fibo.FiboTest passed!" in str(
+        assert "Test class se.repobee.fibo.FiboTest passed!" in str(
             result.msg
         )
 
@@ -314,7 +314,7 @@ Expected: is <false>
         hooks = setup_hooks(verbose=True)
         line_length = 20
         monkeypatch.setattr(
-            "repomate_junit4.junit4._truncate_lines",
+            "repobee_junit4.junit4._truncate_lines",
             partial(junit4._truncate_lines, max_len=line_length),
         )
 
@@ -333,7 +333,7 @@ Expected: is <false>
         hooks = setup_hooks(very_verbose=True)
         line_length = 20
         monkeypatch.setattr(
-            "repomate_junit4.junit4._truncate_lines",
+            "repobee_junit4.junit4._truncate_lines",
             partial(junit4._truncate_lines, max_len=line_length),
         )
 
