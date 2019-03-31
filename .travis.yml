@@ -5,8 +5,8 @@ branches:
   - "/^v\\d+\\.\\d+\\.\\d+$/"
 env:
   global:
-  - REPOMATE_JUNIT4_HAMCREST="hamcrest-core-1.3.jar"
-  - REPOMATE_JUNIT4_JUNIT="junit-4.12.jar"
+  - REPOBEE_JUNIT4_HAMCREST="hamcrest-core-1.3.jar"
+  - REPOBEE_JUNIT4_JUNIT="junit-4.12.jar"
 matrix:
   include:
   - os: linux
@@ -21,12 +21,11 @@ matrix:
     language: generic
     sudo: true
     before_cache:
-      - brew cleanup
+    - brew cleanup
     cache:
       directories:
-        # cache homebrew
-        - $HOME/Library/Caches/Homebrew
-        - /Users/travis/.pyenv/versions
+      - "$HOME/Library/Caches/Homebrew"
+      - "/Users/travis/.pyenv/versions"
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
@@ -34,9 +33,10 @@ after_success:
 notifications:
   email: false
   slack:
+    secure: zzvRSZyewrp+mIpmCtkai4uEVUzZj5R4TcN3YR/Rh16DUp2x/CYsj4BNW0HNy7Q0o/qArIXR5mikDLCXIu0besMzSyCABL/2hzU//lXSGUH/W1AHeAwvLrcK7mcyk0kLeP1TjLh7e/s/lZp2gxVPuqqZg+OtHLzzR3HWmmB/cLNwLPTJ3NMiJ/i97e07S4bCgiJV8WbFMtLGS68u/N17fFzrV5z+pGXtH0kqC7w/+j3DWw6IJSICLw3/0a0ckqHszBA3wZrHnZVz8oUZZ/FmTV8qaPoAyvbA3TE1nai0dJzhq/0jWfHzewqyVXQAS3I1vp9scEeXoH1TWr49bL/c9+UhiOZz+ifdWiosGqPJn5kuCdAIYIbrAF1Un6r+Xrd8EOkU5taaxP5fBjv5v2czhOOvmfYQ656Q4WvMxoQNzfFCUz0PprLxZnYCoqfy/W/jKQ5xRU/1cUjaBo77xvLp5n7OU90JaSO2akHv2AVmsuUaxXXyHnZ9bYr/hYz1NY5N96lMsjzmKxJ2aJJskb4yS7FxCfOBUETwGbo39+8kRMRNw9kkwQimTMliESM7PVIRLpHRETEEJl7cuzogM18bRPxDQ4cIK7WfD6kX/eKedYvVmsp+X7ibKk9GlULWAHQd7vF0L8IraeeUIBajrO8SD40a4EnY791w+6D4czaloZ0=
+    on
     on_success: change
     on_failure: always
-    secure: Cq4Y2dwkNNE7hIZSEtmvNHI/2TZYzKpAJqbb6QPKG0hilx3PGetbs7fWy+ru6gRVW7A494Yk/4+ZO/9A92Pn0QHbbWtJZuU61pC2zxtkH2VKAzMVFly4gkL7L5Q9B8drAoer1usI4OtlN7eyqegTGAT8NEbhaynsJweEDZbWCWoXdQkl4tX6pYyDX/6HAWkfsQLaLPczLACyKYl812qAt7u6fFD+hcjdVrs/LfM9Cdt1gW3t9cVNm/Lqmla+I5OYjRRgbHm4XgsTrhNR0IoAxbktcxSwemnjTzwTsn7VQ9y4t8NlBRB5LUfw/0ihehKl7O4QS2c1G1uLhKHZZSfU8Di/qGGSvj/QBFvyZPDA8a/fmMBrNIHwy4k46l1ZfdDnX65oDbncHuXcFOVlTx85C5Zpy86tQDVktXf3kDlzsUtLgKtAY5dvLMDAwTvkX5M05DMwC51A+b2wsM1zs14CkeTFjHfsBIhDek91YfUEx6dRmnhg1KXVA+q02DKNoI0D5sNkOcgBnVATQOo29zcRKnyit93LBG3EiQYiIhubtwMkveXlEE3Qd5bUSdVuTMObN2nhm1bmYGrJ68dR+zKbsBZ51fcar6YeecmLCF6epBcZI++3AEH5/gu4qXb7A2pbxtiARJtxliI83d6CwEycPWhpjQ4p5UnByMhvKnKv14w=
 deploy:
   provider: pypi
   user: slarse
@@ -44,7 +44,7 @@ deploy:
     tags: true
     condition: $TRAVIS_OS_NAME = "linux"
   password:
-    secure: tpGvW1G8GeBVbOa27W/WWE9BzD2AICkgBNwjFt2/zrFhX9OBXlTqI/ZicVUoyOrKkfWGHmwd4myQuuRS9Sq1O0Zzwkli8JAczUwq7DCkZOdF2gBqdf2t/bLX/QDcZc+d9/xK1agYc7wLqBHTRNJ+N3/HWvg/LzggmCJaVTRvyQWJUDvGKtK6lY3sx+iiM3Z12bYUzrOM7BgKtH173JtrKSFgDdMgnGU6TOylqYNZSs5m/oNDtXbZUDTCveeW5d6d5MiOZkHudWt7Xt88N4VgFynkKvSP5FfjFE57GU7K1p7Q9oJgWilzNM029niaO4rUTaLm8o4Lt2Yb7ylS5I5ht5Cl2S2FMYdKIzbGrFaAZga07hHu96LpDVniAlsUnQ6kNkUMRL75tUDWhSH0NcxcuZB1+CvTepEYtLPV17JnVsgn5bNixOhc+rqo6XvICYT96/ibsvaf0Tr83Edj9Mbp8ilItfo4dIGj651QT9PknZLQ3nCtM8CKiZBI8FpJOUbfAQRlW5HdNSycIkIEB3eqFortRknk6QtBg2IMAqm9tiplH3Y1EYRBmDxNfI5u6OfBIqhuDFOIoPoCsaRAkCeFJRpT3PO0HrNLDQrPFZz6SvMjabIQonnzzrw1xTSVAXP+yFfVspABlePvse6+P5aOMWBx+UrVLVWFv3vjEDkCJJ4=
+    secure: h7W+WrclLm1SVINXr1ykhg9XN3p10odAFex31m/HcbPvUB/X+NjXrCB+6RQaLHK8sjL1m7LhhyD29epQMz1Rbarp7Iyw70h+q/PNRWcc0EUizXWswXnnrDVhDMBcIoczUIIENYIy7tVwFlMT5E5J3ASsuNJ+qrgxxfzkoYkN4imRg0dIc45JCIpAfbDDe/bLcrR42wheaQHN6hkZmywVSfgsf8SZXKnFk+OL+jOSwmjUlEWWLJnrcVrhb5kBxs06OJQnhaysohxqMe+YnPszvso762tTo3KB6rtvkTmG5sAVDbog2ofry/adhQi9/uybhBh8pHuX62bXKYBiS/GC/TuvHI2UODSmzZXw4tcTTuqKxh9qEHVkuB0pcsOw55a/gAzJl5LW61R5PmF9SnvrbgG0M06z2pCBzt/09t4Y1/fCXzPATxyQxDGs3/KGQD0MB/+bqFAsJ6j1dbI1AqpDH9Z1kIGF4To+H8bFVHKd+DMzxyfN+Qd4eH48ackCzCazwezA7WbYKlgZN38tO24Yfi5ZcCnNRmEuoEeID5KzZuT8SBMqwZB/uKEJ8n57i+7E/CkaufB+NPE918O/xfr5dQePw2vU2O1SvMdZOXjOt++9NMIc6MGilsqUMA/ptO4iSh+u9dfq0SPat5MguTyEfeBt7Xni97BgZlnA686F6f4=
   distributions: sdist bdist_wheel
-  repo: slarse/repomate-junit4
+  repo: repobee/repobee-junit4
   skip_existing: true
