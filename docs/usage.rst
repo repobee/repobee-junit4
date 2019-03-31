@@ -5,7 +5,7 @@ Usage
 
 Terminology and conventions
 ---------------------------
-``repomate-junit4`` adds some additional terminology to Repomate that you need
+``repobee-junit4`` adds some additional terminology to RepoBee that you need
 to be familiar with to fully understand the rest of the documentation.
 
 - **Production class:** A Java file/class in the student repo (written by the
@@ -28,7 +28,7 @@ together.
 CLI arguments
 -------------
 
-``repomate-junit4`` adds several new CLI arguments to the ``repomate clone``
+``repobee-junit4`` adds several new CLI arguments to the ``repobee clone``
 command.
 
 * ``-rtd|--reference-tests-dir``
@@ -94,13 +94,13 @@ then look like this.
 Now, assume that we have students *ham*, *spam* and *eggs*, and their student
 repos *ham-fibonacci*, *spam-fibonacci* and *eggs-fibonacci*. Assuming that the
 JUnit4 and Hamcrest jars have been configured as suggested in :ref:`config`,
-and that the basic Repomate arguments are configured (see the `Repomate config
-docs`_), we can run ``repomate clone`` with ``repomate-junit4`` activated like
+and that the basic RepoBee arguments are configured (see the `RepoBee config
+docs`_), we can run ``repobee clone`` with ``repobee-junit4`` activated like
 this:
 
 .. code-block:: none
 
-   $ repomate -p junit4 clone -mn fibonacci -s ham spam eggs -rtd /path/to/reference_tests
+   $ repobee -p junit4 clone -mn fibonacci -s ham spam eggs -rtd /path/to/reference_tests
    [INFO] cloning into student repos ...
    [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/ham-fibonacci
    [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/spam-fibonacci
@@ -138,7 +138,7 @@ this:
 
 Let's digest what happened here. We provided the master repo name (``-mn
 fibonacci``) and the reference tests directory (``-rtd
-/path/to/reference_tests``). ``repomate-junit4`` then looked in the test
+/path/to/reference_tests``). ``repobee-junit4`` then looked in the test
 directory matching the master repo name (i.e. *fibonacci*) test directory and
 found a test class ``FiboTest.java``. By the naming convention, it knows that
 it should now look for a file called ``Fibo.java`` in the student repos.  The
@@ -147,7 +147,7 @@ following then happened when testing the repos:
 - *spam-fibonacci:* The production class ``Fibo.java`` was found and passed the
   test class.
 - *eggs-fibonacci:* Multiple files called ``Fibo.java`` were found, and
-  ``repomate-junit4`` did not know which one to use.
+  ``repobee-junit4`` did not know which one to use.
   - Duplicate class names are only allowed if their fully qualified names
   differ (i.e. the classes are in different packages).  If production code is
   supposed to be packaged, the test classes must also be packaged (in the
@@ -166,4 +166,4 @@ Other common causes of errors include:
 
 This concludes the use case example, I hope you found it enlightening.
 
-.. _Repomate config docs: https://repomate.readthedocs.io/en/latest/configuration.html#configuration-file
+.. _RepoBee config docs: https://repobee.readthedocs.io/en/latest/configuration.html#configuration-file

@@ -4,7 +4,7 @@ Security aspects
 ****************
 
 There are some inconvenient security implications to running untrusted code on
-your own computer. ``repomate-junit4`` tries to limit what a student's code can
+your own computer. ``repobee-junit4`` tries to limit what a student's code can
 do by running with a very strict JVM `Security Policy`_. This is enforced by
 the Java SecurityManager_. The policy used looks like this:
 
@@ -42,4 +42,4 @@ with `--disable-security`.
 
 .. _Security Policy: https://docs.oracle.com/javase/7/docs/technotes/guides/security/PolicyFiles.html
 .. _SecurityManager: https://docs.oracle.com/javase/8/docs/api/java/lang/SecurityManager.html
-.. _open an issue: https://github.com/slarse/repomate-junit4/issues/new
+.. _open an issue: https://github.com/repobee/repobee-junit4/issues/new
