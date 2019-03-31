@@ -1,2 +1,2 @@
-This repo should use the `se.repomate.fibo` package, but uses the default
+This repo should use the `se.repobee.fibo` package, but uses the default
 package.

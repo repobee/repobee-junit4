@@ -5,7 +5,7 @@ with open("README.md", mode="r", encoding="utf-8") as f:
     readme = f.read()
 
 # parse the version instead of importing it to avoid dependency-related crashes
-with open("repomate_junit4/__version.py", mode="r", encoding="utf-8") as f:
+with open("repobee_junit4/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}$", __version__)
@@ -18,19 +18,19 @@ test_requirements = [
     "pytest-mock",
     "codecov",
 ]
-required = ["repomate-plug>=0.4.1", "daiquiri", "colored"]
+required = ["repobee-plug>=0.4.1", "daiquiri", "colored"]
 
 setup(
-    name="repomate-junit4",
+    name="repobee-junit4",
     version=__version__,
-    description="JUnit-4.12 plugin for repomate",
+    description="JUnit-4.12 plugin for repobee",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Simon Larsén",
     author_email="slarse@kth.se",
-    url="https://github.com/slarse/repomate-junit4",
+    url="https://github.com/repobee/repobee-junit4",
     download_url=(
-        "https://github.com/slarse/repomate-junit4/archive/v{}.tar.gz".format(
+        "https://github.com/repobee/repobee-junit4/archive/v{}.tar.gz".format(
             __version__
         )
     ),

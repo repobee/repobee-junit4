@@ -6,9 +6,9 @@
 
         1. ``javac`` must be installed.
         2. A path to ``hamcrest-core-1.3.jar`` must be in the environment
-        variable REPOMATE_JUNIT4_HAMCREST.
+        variable REPOBEE_JUNIT4_HAMCREST.
         3. A path to ``junit-4.12.jar`` must be in the environment variable
-        REPOMATE_JUNIT4_JUNIT.
+        REPOBEE_JUNIT4_JUNIT.
 
 """
 
@@ -20,9 +20,9 @@ from argparse import ArgumentParser
 
 import pytest
 
-import repomate_plug as plug
-from repomate_junit4 import junit4
-from repomate_junit4 import _junit4_runner
+import repobee_plug as plug
+from repobee_junit4 import junit4
+from repobee_junit4 import _junit4_runner
 
 import envvars
 

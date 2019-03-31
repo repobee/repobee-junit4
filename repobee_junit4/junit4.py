@@ -25,12 +25,12 @@ from typing import Union, Iterable, Tuple, List
 import daiquiri
 from colored import bg, style
 
-import repomate_plug as plug
-from repomate_plug import Status
+import repobee_plug as plug
+from repobee_plug import Status
 
-from repomate_junit4 import _java
-from repomate_junit4 import _junit4_runner
-from repomate_junit4 import SECTION
+from repobee_junit4 import _java
+from repobee_junit4 import _junit4_runner
+from repobee_junit4 import SECTION
 
 LOGGER = daiquiri.getLogger(__file__)
 
