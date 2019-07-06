@@ -73,6 +73,10 @@ class JUnit4Hooks(plug.Plugin):
         Returns:
             a plug.HookResult specifying the outcome.
         """
+        if not pathlib.Path(self._reference_tests_dir).is_dir():
+            raise plug.exception.PlugError(
+                "{} is not a directory".format(self._reference_tests_dir)
+            )
         assert self._master_repo_names
         assert self._reference_tests_dir
         try:
@@ -274,7 +278,7 @@ class JUnit4Hooks(plug.Plugin):
             directory.
         """
         test_dir = pathlib.Path(self._reference_tests_dir) / master_name
-        if not (test_dir.exists() and test_dir.is_dir()):
+        if not test_dir.is_dir():
             res = plug.HookResult(
                 SECTION,
                 Status.ERROR,

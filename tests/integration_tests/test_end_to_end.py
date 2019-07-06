@@ -20,6 +20,7 @@ from functools import partial
 import pytest
 
 from repobee_plug import Status
+from repobee_plug import exception
 from repobee_junit4 import junit4
 
 import envvars
@@ -170,28 +171,6 @@ Expected: is <false>
         assert "Test class PrimeCheckerTest failed 2 tests" in result.msg
         assert expected_verbose_msg in result.msg
 
-    def test_no_reference_tests_dir(self):
-        """Test with invalid path to reference_tests_dir."""
-        with tempfile.TemporaryDirectory() as d:
-            dirname = d
-        # dir is now deleted
-
-        hooks = setup_hooks(reference_tests_dir=dirname)
-
-        result = hooks.act_on_cloned_repo(SUCCESS_REPO)
-
-        assert result.status == Status.ERROR
-        assert "no reference test directory" in result.msg
-
-    def test_reference_test_dir_is_file(self):
-        """Test with path to reference_tests_dir leading ot a file."""
-        with tempfile.NamedTemporaryFile() as file:
-            hooks = setup_hooks(reference_tests_dir=file.name)
-            result = hooks.act_on_cloned_repo(SUCCESS_REPO)
-
-        assert result.status == Status.ERROR
-        assert "no reference test directory" in result.msg
-
     def test_reference_test_dir_has_no_subdir_for_repo(self, default_hooks):
         """Test that a warning is returned when the reference test directory
         has no corresponding subdirectory for the specified repo.
@@ -264,9 +243,7 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class se.repobee.fibo.FiboTest passed!" in str(
-            result.msg
-        )
+        assert "Test class se.repobee.fibo.FiboTest passed!" in str(result.msg)
 
     def test_error_when_student_code_is_incorrectly_packaged(
         self, default_hooks
@@ -286,6 +263,30 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(MULTIPLE_PACKAGES_REPO)
 
         assert result.status == Status.SUCCESS
+
+    def test_raises_when_rtd_does_not_exist(self):
+        with tempfile.TemporaryDirectory() as deleted_dir:
+            pass
+        hooks = setup_hooks(reference_tests_dir=str(deleted_dir))
+
+        with pytest.raises(exception.PlugError) as exc_info:
+            hooks.act_on_cloned_repo(SUCCESS_REPO)
+
+        assert "{} is not a directory".format(str(deleted_dir)) in str(
+            exc_info.value
+        )
+
+    def test_raises_when_rtd_is_a_file(self):
+        """Should raise RTD exists, but is a file instead of a directory."""
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            hooks = setup_hooks(reference_tests_dir=str(tmpfile))
+
+            with pytest.raises(exception.PlugError) as exc_info:
+                hooks.act_on_cloned_repo(SUCCESS_REPO)
+
+        assert "{} is not a directory".format(str(tmpfile)) in str(
+            exc_info.value
+        )
 
     _CP = "{}:{}:{}:{}"
 
