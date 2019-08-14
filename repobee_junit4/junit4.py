@@ -332,7 +332,7 @@ class JUnit4Hooks(plug.Plugin):
         return os.linesep.join(
             [
                 test_result_string(status, msg)
-                for _, status, msg in hook_results
+                for _, status, msg, _ in hook_results
             ]
         )
 
