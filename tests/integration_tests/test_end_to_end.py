@@ -14,6 +14,7 @@ import pathlib
 import shutil
 import tempfile
 import os
+from unittest import mock
 from collections import namedtuple
 from functools import partial
 
@@ -129,6 +130,22 @@ class TestActOnClonedRepo:
     @pytest.fixture
     def default_hooks(self):
         return setup_hooks()
+
+    def test_converts_generic_exception_to_hook_result(self, default_hooks):
+        """Test that a generic Exception raised during execution is converted to a hook result."""
+        msg = "Some error message"
+
+        def _raise_exception(*args, **kwargs):
+            raise Exception(msg)
+
+        with mock.patch(
+            "repobee_junit4.junit4.JUnit4Hooks._compile_all",
+            side_effect=_raise_exception,
+        ):
+            result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
+
+        assert result.status == Status.ERROR
+        assert result.msg == msg
 
     def test_with_abstract_test_class(self, default_hooks):
         """Test running the plugin when the reference tests include an abstract
