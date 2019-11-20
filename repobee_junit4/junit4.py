@@ -104,9 +104,7 @@ class JUnit4Hooks(plug.Plugin):
         except _ActException as exc:
             return exc.hook_result
         except Exception as exc:
-            raise _ActException(
-                plug.HookResult(SECTION, Status.ERROR, str(exc))
-            )
+            return plug.HookResult(SECTION, Status.ERROR, str(exc))
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Get command line arguments.
