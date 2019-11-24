@@ -229,25 +229,22 @@ class TestCloneParserHook:
         "verbose, very_verbose", [(None, None), (False, True), (True, False)]
     )
     def test_arguments_get_added(self, junit4_hooks, verbose, very_verbose):
-        """Just test that `-rtd`, `-i`, `-ham` and `-junit` get added
-        correctly and that the args can then be parsed as expected.
-        """
         parser = ArgumentParser()
         sys_args = [
-            "-rtd",
+            "--junit4-reference-tests-dir",
             RTD,
-            "-i",
+            "--junit4-ignore-tests",
             " ".join(IGNORE_TESTS),
-            "-ham",
+            "--junit4-hamcrest-path",
             HAMCREST_PATH,
-            "-junit",
+            "--junit4-junit-path",
             JUNIT_PATH,
         ]
 
         if verbose:
-            sys_args += ["-v"]
+            sys_args += ["--junit4-verbose"]
         if very_verbose:
-            sys_args += ["-vv"]
+            sys_args += ["--junit4-very-verbose"]
 
         junit4_hooks.clone_parser_hook(parser)
 
@@ -268,14 +265,14 @@ class TestCloneParserHook:
         """
         parser = ArgumentParser()
         sys_args = [
-            "-rtd",
+            "--junit4-reference-tests-dir",
             RTD,
-            "-ham",
+            "--junit4-hamcrest-path",
             HAMCREST_PATH,
-            "-junit",
+            "--junit4-junit-path",
             JUNIT_PATH,
-            "--verbose",
-            "--very-verbose",
+            "--junit4-verbose",
+            "--junit4-very-verbose",
         ]
 
         junit4_hooks.clone_parser_hook(parser)
@@ -289,14 +286,14 @@ class TestCloneParserHook:
         defined in either config or classpath (for hamcrest and junit).
         """
         parser = ArgumentParser()
-        sys_args = ["-i", " ".join(IGNORE_TESTS)]
+        sys_args = ["--junit4-ignore-tests", " ".join(IGNORE_TESTS)]
 
         if skip_arg != "ham":
-            sys_args.extend(["-ham", HAMCREST_PATH])
+            sys_args.extend(["--junit4-hamcrest-path", HAMCREST_PATH])
         if skip_arg != "junit":
-            sys_args.extend(["-junit", JUNIT_PATH])
+            sys_args.extend(["--junit4-junit-path", JUNIT_PATH])
         if skip_arg != "rtd":
-            sys_args.extend(["-rtd", RTD])
+            sys_args.extend(["--junit4-refernce-tests-dir", RTD])
 
         junit4_hooks.clone_parser_hook(parser)
 
@@ -309,7 +306,12 @@ class TestCloneParserHook:
         """Just checks that there is no chrash."""
         config_parser = ConfigParser()
         arg_parser = ArgumentParser()
-        sys_args = ["-rtd", RTD, "-i", " ".join(IGNORE_TESTS)]
+        sys_args = [
+            "--junit4-reference-tests-dir",
+            RTD,
+            "--junit4-ignore-tests",
+            " ".join(IGNORE_TESTS),
+        ]
         getenv_empty_classpath.side_effect = (
             lambda name: CLASSPATH_WITH_JARS if name == "CLASSPATH" else None
         )
