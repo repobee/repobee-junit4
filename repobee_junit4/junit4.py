@@ -145,65 +145,66 @@ class JUnit4Hooks(plug.Plugin):
             clone_parser: The ``clone`` subparser.
         """
         clone_parser.add_argument(
-            "-rtd",
-            "--reference-tests-dir",
+            "--junit4-reference-tests-dir",
             help="Path to a directory with reference tests.",
             type=str,
+            dest="reference_tests_dir",
             required=not self._reference_tests_dir,
         )
 
         clone_parser.add_argument(
-            "-i",
-            "--ignore-tests",
+            "--junit4-ignore-tests",
             help="Names of test classes to ignore.",
             type=str,
+            dest="ignore_tests",
             nargs="+",
         )
 
         clone_parser.add_argument(
-            "-ham",
-            "--hamcrest-path",
+            "--junit4-hamcrest-path",
             help="Absolute path to the `{}` library.".format(
                 _junit4_runner.HAMCREST_JAR
             ),
             type=str,
+            dest="hamcrest_path",
             # required if not picked up in config_hook nor on classpath
             required=not self._hamcrest_path
             and _junit4_runner.HAMCREST_JAR not in self._classpath,
         )
 
         clone_parser.add_argument(
-            "-junit",
-            "--junit-path",
+            "--junit4-junit-path",
             help="Absolute path to the `{}` library.".format(
                 _junit4_runner.JUNIT_JAR
             ),
             type=str,
+            dest="junit_path",
             # required if not picked up in config_hook nor on classpath
             required=not self._junit_path
             and _junit4_runner.JUNIT_JAR not in self._classpath,
         )
 
         clone_parser.add_argument(
-            "--disable-security",
+            "--junit4-disable-security",
             help=(
                 "Disable the default security policy (student code can do "
                 "whatever)."
             ),
+            dest="disable_security",
             action="store_true",
         )
 
         verbosity = clone_parser.add_mutually_exclusive_group()
         verbosity.add_argument(
-            "-v",
-            "--verbose",
+            "--junit4-verbose",
             help="Display more information about test failures.",
+            dest="verbose",
             action="store_true",
         )
         verbosity.add_argument(
-            "-vv",
-            "--very-verbose",
+            "--junit4-very-verbose",
             help="Display the full failure output, without truncating.",
+            dest="very_verbose",
             action="store_true",
         )
 
