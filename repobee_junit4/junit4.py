@@ -20,7 +20,9 @@ import os
 import argparse
 import configparser
 import pathlib
-from typing import Union, Iterable, Tuple, List
+import collections
+from typing import Union, Iterable, Tuple, List, Any
+
 
 import daiquiri
 from colored import bg, style
@@ -57,6 +59,7 @@ class JUnit4Hooks(plug.Plugin):
         self._verbose = False
         self._very_verbose = False
         self._disable_security = False
+        self._run_student_tests = False
 
     def act_on_cloned_repo(
         self, path: Union[str, pathlib.Path]
@@ -135,6 +138,7 @@ class JUnit4Hooks(plug.Plugin):
             if args.disable_security
             else self._disable_security
         )
+        self._run_student_tests = args.run_student_tests
 
     def clone_parser_hook(
         self, clone_parser: configparser.ConfigParser
@@ -208,6 +212,15 @@ class JUnit4Hooks(plug.Plugin):
             action="store_true",
         )
 
+        clone_parser.add_argument(
+            "--junit4-run-student-tests",
+            help="Run test classes found in the student repos instead of "
+            "those from the reference tests directory. Only tests that exist "
+            "in the reference tests directory will be searched for.",
+            dest="run_student_tests",
+            action="store_true",
+        )
+
     def config_hook(self, config_parser: configparser.ConfigParser) -> None:
         """Look for hamcrest and junit paths in the config, and get the classpath.
 
@@ -235,7 +248,12 @@ class JUnit4Hooks(plug.Plugin):
         """
         java_files = list(path.rglob("*.java"))
         master_name = self._extract_master_repo_name(path)
-        test_classes = self._find_test_classes(master_name)
+        reference_test_classes = self._find_test_classes(master_name)
+        test_classes = (
+            self._find_matching_files(path, reference_test_classes)
+            if self._run_student_tests
+            else reference_test_classes
+        )
         compile_succeeded, compile_failed = _java.pairwise_compile(
             test_classes, java_files, classpath=self._generate_classpath()
         )
@@ -305,6 +323,15 @@ class JUnit4Hooks(plug.Plugin):
             raise _ActException(res)
 
         return test_classes
+
+    def _find_matching_files(
+        self, path: pathlib.Path, reference_files: List[pathlib.Path]
+    ) -> List[pathlib.Path]:
+        """Return paths to all files that match filenames in the provided list.
+        Raises if there is more than one or no matches for any of the files.
+        """
+        filenames = {f.name for f in reference_files}
+        return [file for file in path.rglob("*") if file.name in filenames]
 
     def _format_results(self, hook_results: Iterable[plug.HookResult]):
         """Format a list of plug.HookResult tuples as a nice string.
