@@ -71,6 +71,7 @@ UNAUTHORIZED_NETWORK_ACCESS_REPO = (
     REPO_DIR / "unauthorized-network-access-week-10"
 )
 BAD_TESTS_REPO = REPO_DIR / "student-with-bad-tests-week-10"
+DUPLICATE_TESTS_REPO = REPO_DIR / "student-with-duplicate-tests-week-10"
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -141,6 +142,28 @@ class TestActOnClonedRepo:
 
         assert result.status == Status.ERROR
         assert "Student wrote a bad test" in str(result.msg)
+
+    def test_handles_duplicate_student_tests(self):
+        hooks = setup_hooks(run_student_tests=True, verbose=True)
+
+        result = hooks.act_on_cloned_repo(DUPLICATE_TESTS_REPO)
+
+        assert result.status == Status.ERROR
+        assert (
+            "Duplicates of the following test classes found in student "
+            "repo: FiboTest.java" in str(result.msg)
+        )
+
+    def test_handles_missing_student_tests(self):
+        hooks = setup_hooks(run_student_tests=True, verbose=True)
+
+        result = hooks.act_on_cloned_repo(SUCCESS_REPO)
+
+        assert result.status == Status.ERROR
+        assert (
+            "Missing the following test classes in student repo: FiboTest.java"
+            in str(result.msg)
+        )
 
     def test_converts_generic_exception_to_hook_result(self, default_hooks):
         """Test that a generic Exception raised during execution is converted to a hook result."""

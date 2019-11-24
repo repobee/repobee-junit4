@@ -32,6 +32,7 @@ from repobee_plug import Status
 
 from repobee_junit4 import _java
 from repobee_junit4 import _junit4_runner
+from repobee_junit4 import _exception
 from repobee_junit4 import SECTION
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -39,13 +40,6 @@ LOGGER = daiquiri.getLogger(__file__)
 ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
 DEFAULT_LINE_LIMIT = 150
-
-
-class _ActException(Exception):
-    """Raise if something goes wrong in act_on_clone_repo."""
-
-    def __init__(self, hook_result):
-        self.hook_result = hook_result
 
 
 class JUnit4Hooks(plug.Plugin):
@@ -104,7 +98,8 @@ class JUnit4Hooks(plug.Plugin):
                 else Status.SUCCESS
             )
             return plug.HookResult(SECTION, status, msg)
-        except _ActException as exc:
+        except _exception.ActError as exc:
+            print(exc)
             return exc.hook_result
         except Exception as exc:
             return plug.HookResult(SECTION, Status.ERROR, str(exc))
@@ -250,7 +245,7 @@ class JUnit4Hooks(plug.Plugin):
         master_name = self._extract_master_repo_name(path)
         reference_test_classes = self._find_test_classes(master_name)
         test_classes = (
-            self._find_matching_files(path, reference_test_classes)
+            _java.get_student_test_classes(path, reference_test_classes)
             if self._run_student_tests
             else reference_test_classes
         )
@@ -282,7 +277,7 @@ class JUnit4Hooks(plug.Plugin):
                 )
             )
             res = plug.HookResult(SECTION, Status.ERROR, msg)
-            raise _ActException(res)
+            raise _exception.ActError(res)
 
     def _find_test_classes(self, master_name) -> List[pathlib.Path]:
         """Find all test classes (files ending in ``Test.java``) in directory
@@ -303,7 +298,7 @@ class JUnit4Hooks(plug.Plugin):
                     master_name, self._reference_tests_dir
                 ),
             )
-            raise _ActException(res)
+            raise _exception.ActError(res)
 
         test_classes = [
             file
@@ -320,18 +315,9 @@ class JUnit4Hooks(plug.Plugin):
                     test_dir
                 ),
             )
-            raise _ActException(res)
+            raise _exception.ActError(res)
 
         return test_classes
-
-    def _find_matching_files(
-        self, path: pathlib.Path, reference_files: List[pathlib.Path]
-    ) -> List[pathlib.Path]:
-        """Return paths to all files that match filenames in the provided list.
-        Raises if there is more than one or no matches for any of the files.
-        """
-        filenames = {f.name for f in reference_files}
-        return [file for file in path.rglob("*") if file.name in filenames]
 
     def _format_results(self, hook_results: Iterable[plug.HookResult]):
         """Format a list of plug.HookResult tuples as a nice string.
