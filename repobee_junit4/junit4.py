@@ -20,7 +20,9 @@ import os
 import argparse
 import configparser
 import pathlib
-from typing import Union, Iterable, Tuple, List
+import collections
+from typing import Union, Iterable, Tuple, List, Any
+
 
 import daiquiri
 from colored import bg, style
@@ -30,6 +32,7 @@ from repobee_plug import Status
 
 from repobee_junit4 import _java
 from repobee_junit4 import _junit4_runner
+from repobee_junit4 import _exception
 from repobee_junit4 import SECTION
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -37,13 +40,6 @@ LOGGER = daiquiri.getLogger(__file__)
 ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
 DEFAULT_LINE_LIMIT = 150
-
-
-class _ActException(Exception):
-    """Raise if something goes wrong in act_on_clone_repo."""
-
-    def __init__(self, hook_result):
-        self.hook_result = hook_result
 
 
 class JUnit4Hooks(plug.Plugin):
@@ -57,6 +53,7 @@ class JUnit4Hooks(plug.Plugin):
         self._verbose = False
         self._very_verbose = False
         self._disable_security = False
+        self._run_student_tests = False
 
     def act_on_cloned_repo(
         self, path: Union[str, pathlib.Path]
@@ -101,7 +98,8 @@ class JUnit4Hooks(plug.Plugin):
                 else Status.SUCCESS
             )
             return plug.HookResult(SECTION, status, msg)
-        except _ActException as exc:
+        except _exception.ActError as exc:
+            print(exc)
             return exc.hook_result
         except Exception as exc:
             return plug.HookResult(SECTION, Status.ERROR, str(exc))
@@ -135,6 +133,7 @@ class JUnit4Hooks(plug.Plugin):
             if args.disable_security
             else self._disable_security
         )
+        self._run_student_tests = args.run_student_tests
 
     def clone_parser_hook(
         self, clone_parser: configparser.ConfigParser
@@ -208,6 +207,15 @@ class JUnit4Hooks(plug.Plugin):
             action="store_true",
         )
 
+        clone_parser.add_argument(
+            "--junit4-run-student-tests",
+            help="Run test classes found in the student repos instead of "
+            "those from the reference tests directory. Only tests that exist "
+            "in the reference tests directory will be searched for.",
+            dest="run_student_tests",
+            action="store_true",
+        )
+
     def config_hook(self, config_parser: configparser.ConfigParser) -> None:
         """Look for hamcrest and junit paths in the config, and get the classpath.
 
@@ -235,7 +243,12 @@ class JUnit4Hooks(plug.Plugin):
         """
         java_files = list(path.rglob("*.java"))
         master_name = self._extract_master_repo_name(path)
-        test_classes = self._find_test_classes(master_name)
+        reference_test_classes = self._find_test_classes(master_name)
+        test_classes = (
+            _java.get_student_test_classes(path, reference_test_classes)
+            if self._run_student_tests
+            else reference_test_classes
+        )
         compile_succeeded, compile_failed = _java.pairwise_compile(
             test_classes, java_files, classpath=self._generate_classpath()
         )
@@ -264,7 +277,7 @@ class JUnit4Hooks(plug.Plugin):
                 )
             )
             res = plug.HookResult(SECTION, Status.ERROR, msg)
-            raise _ActException(res)
+            raise _exception.ActError(res)
 
     def _find_test_classes(self, master_name) -> List[pathlib.Path]:
         """Find all test classes (files ending in ``Test.java``) in directory
@@ -285,7 +298,7 @@ class JUnit4Hooks(plug.Plugin):
                     master_name, self._reference_tests_dir
                 ),
             )
-            raise _ActException(res)
+            raise _exception.ActError(res)
 
         test_classes = [
             file
@@ -302,7 +315,7 @@ class JUnit4Hooks(plug.Plugin):
                     test_dir
                 ),
             )
-            raise _ActException(res)
+            raise _exception.ActError(res)
 
         return test_classes
 

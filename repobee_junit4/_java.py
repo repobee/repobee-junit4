@@ -14,6 +14,7 @@ import re
 import os
 import sys
 import subprocess
+import collections
 
 from typing import Iterable, Tuple, Union, List
 
@@ -21,6 +22,7 @@ import repobee_plug as plug
 from repobee_plug import Status
 
 from repobee_junit4 import SECTION
+from repobee_junit4 import _exception
 
 
 def is_abstract_class(class_: pathlib.Path) -> bool:
@@ -187,6 +189,71 @@ def pairwise_compile(
     return succeeded, failed
 
 
+def get_student_test_classes(
+    path: pathlib.Path, reference_test_classes: List[pathlib.Path]
+) -> List[pathlib.Path]:
+    """Return paths to all files that match the test classes in the
+    provided list. Raises if there is more than one or no matches for any
+    of the files.
+
+    Args:
+        path: Path to the repository worktree.
+        reference_test_classes: A list of paths to reference test classes.
+            These are assumed to be unique.
+    Returns:
+        A list of paths to test classes corresponding to the ones in the input
+        list, but in the student repository.
+    """
+    filenames = {f.name for f in reference_test_classes}
+    matches = [file for file in path.rglob("*") if file.name in filenames]
+    _check_exact_matches(reference_test_classes, matches)
+    return matches
+
+
+def _check_exact_matches(
+    reference_test_classes: List[pathlib.Path],
+    student_test_classes: List[pathlib.Path],
+) -> None:
+    """Check that for every path in reference_test_classes, there is a path in
+    student_test_classes with the same filename and the same package.
+    """
+
+    def by_fqn(path):
+        pkg = extract_package(path)
+        return fqn(pkg, path.name)
+
+    duplicates = _extract_duplicates(student_test_classes)
+    if duplicates:
+        raise _exception.JavaError(
+            "Duplicates of the following test classes found in student repo: "
+            + ", ".join(duplicates)
+        )
+    if len(student_test_classes) < len(reference_test_classes):
+        reference_filenames = {f.name for f in reference_test_classes}
+        student_filenames = {f.name for f in student_test_classes}
+        raise _exception.JavaError(
+            "Missing the following test classes in student repo: "
+            + ", ".join(reference_filenames - student_filenames)
+        )
+    package_mismatch = []
+    for ref, match in zip(
+        sorted(reference_test_classes, key=by_fqn),
+        sorted(student_test_classes, key=by_fqn),
+    ):
+        expected_package = extract_package(ref)
+        actual_package = extract_package(match)
+        if actual_package != expected_package:
+            package_mismatch.append((ref, expected_package, actual_package))
+    if package_mismatch:
+        errors = ", ".join(
+            "Student's {} expected to have package {}, but had {}".format(
+                ref.name, expected, actual
+            )
+            for ref, expected, actual in package_mismatch
+        )
+        raise _exception.JavaError("Package statement mismatch: " + errors)
+
+
 def _pairwise_compile(test_class, classpath, java_files):
     """Compile the given test class together with its production class
     counterpoint (if it can be found). Return a tuple of (status, msg).
@@ -215,6 +282,11 @@ def _pairwise_compile(test_class, classpath, java_files):
             [*adjacent_java_files], generate_classpath(classpath=classpath)
         )
     return status, msg, prod_class_path
+
+
+def _extract_duplicates(files: List[pathlib.Path]) -> List[pathlib.Path]:
+    counts = collections.Counter([f.name for f in files])
+    return [path for path, count in counts.items() if count > 1]
 
 
 def _get_matching_prod_classes(test_class, package, java_files):

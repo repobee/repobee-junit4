@@ -70,6 +70,8 @@ UNAUTHORIZED_READ_FILE_REPO = REPO_DIR / "unauthorized-read-file-week-10"
 UNAUTHORIZED_NETWORK_ACCESS_REPO = (
     REPO_DIR / "unauthorized-network-access-week-10"
 )
+BAD_TESTS_REPO = REPO_DIR / "student-with-bad-tests-week-10"
+DUPLICATE_TESTS_REPO = REPO_DIR / "student-with-duplicate-tests-week-10"
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -104,6 +106,7 @@ def setup_hooks(
     verbose=False,
     very_verbose=False,
     disable_security=False,
+    run_student_tests=False,
 ):
     """Return an instance of JUnit4Hooks with pre-configured arguments."""
     hooks = junit4.JUnit4Hooks()
@@ -116,6 +119,7 @@ def setup_hooks(
     hooks._verbose = verbose
     hooks._very_verbose = very_verbose
     hooks._disable_security = disable_security
+    hooks._run_student_tests = run_student_tests
     return hooks
 
 
@@ -130,6 +134,36 @@ class TestActOnClonedRepo:
     @pytest.fixture
     def default_hooks(self):
         return setup_hooks()
+
+    def test_runs_student_tests_correctly(self):
+        hooks = setup_hooks(run_student_tests=True, verbose=True)
+
+        result = hooks.act_on_cloned_repo(BAD_TESTS_REPO)
+
+        assert result.status == Status.ERROR
+        assert "Student wrote a bad test" in str(result.msg)
+
+    def test_handles_duplicate_student_tests(self):
+        hooks = setup_hooks(run_student_tests=True, verbose=True)
+
+        result = hooks.act_on_cloned_repo(DUPLICATE_TESTS_REPO)
+
+        assert result.status == Status.ERROR
+        assert (
+            "Duplicates of the following test classes found in student "
+            "repo: FiboTest.java" in str(result.msg)
+        )
+
+    def test_handles_missing_student_tests(self):
+        hooks = setup_hooks(run_student_tests=True, verbose=True)
+
+        result = hooks.act_on_cloned_repo(SUCCESS_REPO)
+
+        assert result.status == Status.ERROR
+        assert (
+            "Missing the following test classes in student repo: FiboTest.java"
+            in str(result.msg)
+        )
 
     def test_converts_generic_exception_to_hook_result(self, default_hooks):
         """Test that a generic Exception raised during execution is converted to a hook result."""

@@ -38,6 +38,7 @@ Args = namedtuple(
         "verbose",
         "very_verbose",
         "disable_security",
+        "run_student_tests",
     ),
 )
 Args.__new__.__defaults__ = (None,) * len(Args._fields)
@@ -66,6 +67,7 @@ CLASSPATH = "some-stuf:nice/path:path/to/unimportant/lib.jar"
 VERBOSE = False
 VERY_VERBOSE = False
 DISABLE_SECURITY = False
+RUN_STUDENT_TESTS = False
 
 CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
 
@@ -84,6 +86,7 @@ def setup_args(
     verbose=VERBOSE,
     very_verbose=VERY_VERBOSE,
     disable_security=DISABLE_SECURITY,
+    run_student_tests=RUN_STUDENT_TESTS,
 ):
     """Return an Args instance with the specified values."""
     return Args(
@@ -95,6 +98,7 @@ def setup_args(
         verbose=verbose,
         very_verbose=very_verbose,
         disable_security=disable_security,
+        run_student_tests=run_student_tests,
     )
 
 
@@ -151,6 +155,7 @@ class TestParseArgs:
         assert junit4_hooks._verbose == VERBOSE
         assert junit4_hooks._very_verbose == VERY_VERBOSE
         assert junit4_hooks._disable_security == DISABLE_SECURITY
+        assert junit4_hooks._run_student_tests == RUN_STUDENT_TESTS
 
     def test_defaults_are_overwritten(self, junit4_hooks, full_args):
         """Test that ignore_tests, hamcrest_path and junit_path are all
@@ -185,6 +190,7 @@ class TestParseArgs:
         )
         expected_rtd = RTD
         expected_disable_security = False
+        expected_run_student_tests = False
 
         junit4_hooks._ignore_tests = expected_ignore_tests
         junit4_hooks._hamcrest_path = expected_hamcrest_path
