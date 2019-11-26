@@ -24,9 +24,9 @@ copyright = "2019, Simon Larsén"
 author = "Simon Larsén"
 
 # The short X.Y version
-version = "0.6"
+version = "0.7"
 # The full version, including alpha/beta/rc tags
-release = "0.6.1"
+release = "0.7.0"
 
 
 # -- General configuration ---------------------------------------------------
