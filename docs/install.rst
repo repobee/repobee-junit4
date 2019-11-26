@@ -34,10 +34,10 @@ jars. They can be downloaded from Maven Central.
 
 .. code-block:: bash
 
-   wget http://central.maven.org/maven2/junit/junit/4.12/junit-4.12.jar
-   wget http://central.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
+    curl https://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar -o junit-4.12.jar
+    curl https://search.maven.org/remotecontent?filepath=org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar -o hamcrest-core-1.3.jar
 
-If you don't have ``wget`` installed, just copy the links above and download
+If you don't have ``curl`` installed, just copy the links above and download
 them manually.
 
 Install plugin
@@ -66,13 +66,14 @@ configuration file`_ by adding the ``[junit4]`` section. Everything
 ``repobee-junit4`` needs to operate *can* be provided on the command line, but
 I strongly recommend adding the absolute paths to the ``junit-4.12.jar`` and
 ``hamcrest-core-1.3.jar`` files to the config file. Simply append the following
-to the end of the configuration file.
+to the end of the configuration file. Here's a sample configuration.
 
 .. code-block:: bash
 
    [junit4]
    junit_path = /absolute/path/to/junit-4.12.jar
    hamcrest_path = /absolute/path/to/hamcrest-core-1.3.jar
+   reference_tests_dir = /absolute/path/to/reference_tests_dir
 
 .. important::
 

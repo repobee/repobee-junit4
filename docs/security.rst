@@ -31,7 +31,7 @@ be snags because of how restrictive it is. If you find that some permission
 should definitely be added, please `open an issue`_ about it. There are plans
 to add the ability to specify a custom security policy, but currently, your
 only choice is to either use this default policy or disable it
-with `--disable-security`.
+with `--junit4-disable-security`.
 
 .. important::
 

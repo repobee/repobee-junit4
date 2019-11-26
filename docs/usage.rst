@@ -31,35 +31,44 @@ CLI arguments
 ``repobee-junit4`` adds several new CLI arguments to the ``repobee clone``
 command.
 
-* ``-rtd|--reference-tests-dir``
+* ``--junit4-reference-tests-dir``
     - Path to the RTD.
     - Can be specified in the configuration file with the
       ``reference_test_dir`` option.
     - **Required** unless specified in the configuration file.
-* ``-junit|--junit-path``
+* ``--junit4-junit-path``
     - Path to the ``junit-4.12.jar`` library.
     - Picked up automatically if on the ``CLASSPATH`` environment variable.
     - Can be specified in the configuration file with the
       ``junit_path`` option.
     - **Required** unless specified on the ``CLASSPATH`` variable, or in the
       configuration file.
-* ``-ham|--hamcrest-path``
+* ``--junit4-hamcrest-path``
     - Path to the ``hamcrest-core-1.3.jar`` library.
     - Picked up automatically if on the ``CLASSPATH`` environment variable.
     - Can be specified in the configuration file with the
       ``hamcrest_path`` option.
     - **Required** unless specified on the ``CLASSPATH`` variable, or in the
       configuration file.
-* ``-i|--ignore-tests``
+* ``--junit4-run-student-tests``
+    - Run test classes from the student repository instead of from the
+      reference tests.
+    - Expects the test classes in the reference tests directory to be present
+      in the student repository.
+        - Only runs if all tests found in the RTD are present in the student
+          repository.
+        - Use in conjunction with ``--junit4-ignore-tests`` to ignore some
+          tests from the RTD.
+* ``--junit4-ignore-tests``
     - A whitespace separated list of test files (e.g. ``LinkedListTest.java``) to
       ignore.
-* ``--disable-security``
+* ``--junit4-disable-security``
     - Disable the security policy.
-* ``-v|--verbose``
+* ``--junit4-verbose``
     - Display more verbose information (currently only concerns test failures).
     - Long lines are truncated.
-* ``-vv|--very-verbose``
-    - Same as ``-v``, but without truncation.
+* ``--junit4-very-verbose``
+    - Same as ``--junit4-verbose``, but without truncation.
 
 .. _use case:
 
@@ -100,7 +109,7 @@ this:
 
 .. code-block:: none
 
-   $ repobee -p junit4 clone -mn fibonacci -s ham spam eggs -rtd /path/to/reference_tests
+   $ repobee -p junit4 clone --mn fibonacci -s ham spam eggs --junit4-reference-tests-dir /path/to/reference_tests
    [INFO] cloning into student repos ...
    [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/ham-fibonacci
    [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/spam-fibonacci
@@ -137,11 +146,11 @@ this:
 
 
 Let's digest what happened here. We provided the master repo name (``-mn
-fibonacci``) and the reference tests directory (``-rtd
+fibonacci``) and the reference tests directory (``--junit4-reference-tests-dir
 /path/to/reference_tests``). ``repobee-junit4`` then looked in the test
 directory matching the master repo name (i.e. *fibonacci*) test directory and
 found a test class ``FiboTest.java``. By the naming convention, it knows that
-it should now look for a file called ``Fibo.java`` in the student repos.  The
+it should now look for a file called ``Fibo.java`` in the student repos. The
 following then happened when testing the repos:
 
 - *spam-fibonacci:* The production class ``Fibo.java`` was found and passed the
@@ -154,8 +163,8 @@ following then happened when testing the repos:
   same package).
 - *ham-fibonacci:* The production class ``Fibo.java`` was found, but failed one
   of the tests.
-  - Running the same command again with ``-v`` or ``-vv`` would display which
-  test failed, and why.
+  - Running the same command again with ``--junit4-verbose`` or
+    ``--junit4-very-verbose`` would display which test failed, and why.
 
 Other common causes of errors include:
 

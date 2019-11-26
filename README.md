@@ -7,6 +7,9 @@
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+> **Breaking changes in 0.7.0:** v0.7.0 of this plugin changes the names of
+> _all_ command line options.
+
 ## Overview
 This is a plugin for [RepoBee](https://github.com/repobee/repobee) that runs
 JUnit4 test classes on production classes in cloned student repos. It allows
@@ -38,9 +41,9 @@ which hopefully proves useful in clarifying how `repobee-junit4` is supposed to
 be used.
 
 ## Roadmap
-This plugin is in the beta testing phase. It is feature-complete, but the CLI is
-not yet final and may change. This is partly due to the fact that the Repmate
-plugin system itself is still in beta, and may also change.
+This plugin is in the beta testing phase. It is feature-complete, but the CLI
+is not yet final and may change. This is partly due to the fact that the
+RepoBee plugin system itself is still in beta, and may also change.
 
 Versioning for the CLI adheres to
 [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). The internals

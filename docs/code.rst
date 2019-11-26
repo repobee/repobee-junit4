@@ -20,3 +20,9 @@ _junit4_runner
 
 .. automodule:: repobee_junit4._junit4_runner
     :members:
+
+_exception
+====================
+
+.. automodule:: repobee_junit4._exception
+    :members:
