@@ -145,7 +145,7 @@ this:
    The output is color coded when displayed in a terminal.
 
 
-Let's digest what happened here. We provided the master repo name (``-mn
+Let's digest what happened here. We provided the master repo name (``--mn
 fibonacci``) and the reference tests directory (``--junit4-reference-tests-dir
 /path/to/reference_tests``). ``repobee-junit4`` then looked in the test
 directory matching the master repo name (i.e. *fibonacci*) test directory and
@@ -153,18 +153,20 @@ found a test class ``FiboTest.java``. By the naming convention, it knows that
 it should now look for a file called ``Fibo.java`` in the student repos. The
 following then happened when testing the repos:
 
-- *spam-fibonacci:* The production class ``Fibo.java`` was found and passed the
+* *spam-fibonacci:* The production class ``Fibo.java`` was found and passed the
   test class.
-- *eggs-fibonacci:* Multiple files called ``Fibo.java`` were found, and
+* *eggs-fibonacci:* Multiple files called ``Fibo.java`` were found, and
   ``repobee-junit4`` did not know which one to use.
+
   - Duplicate class names are only allowed if their fully qualified names
-  differ (i.e. the classes are in different packages).  If production code is
-  supposed to be packaged, the test classes must also be packaged (in the
-  same package).
-- *ham-fibonacci:* The production class ``Fibo.java`` was found, but failed one
+    differ (i.e. the classes are in different packages).  If production code is
+    supposed to be packaged, the test classes must also be packaged (in the
+    same package).
+* *ham-fibonacci:* The production class ``Fibo.java`` was found, but failed one
   of the tests.
-  - Running the same command again with ``--junit4-verbose`` or
-    ``--junit4-very-verbose`` would display which test failed, and why.
+
+    - Running the same command again with ``--junit4-verbose`` or
+      ``--junit4-very-verbose`` would display which test failed, and why.
 
 Other common causes of errors include:
 
