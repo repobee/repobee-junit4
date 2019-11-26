@@ -99,7 +99,6 @@ class JUnit4Hooks(plug.Plugin):
             )
             return plug.HookResult(SECTION, status, msg)
         except _exception.ActError as exc:
-            print(exc)
             return exc.hook_result
         except Exception as exc:
             return plug.HookResult(SECTION, Status.ERROR, str(exc))
