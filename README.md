@@ -41,9 +41,10 @@ which hopefully proves useful in clarifying how `repobee-junit4` is supposed to
 be used.
 
 ## Roadmap
-This plugin is in the beta testing phase. It is feature-complete, but the CLI
-is not yet final and may change. This is partly due to the fact that the
-RepoBee plugin system itself is still in beta, and may also change.
+This plugin is in the alpha testing phase. All features currently in the plugin
+will remain, but the CLI is not yet final and may change. This is partly due to
+the fact that the RepoBee plugin system itself is still in alpha, and may also
+change.
 
 Versioning for the CLI adheres to
 [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). The internals
