@@ -182,12 +182,8 @@ class TestParseArgs:
         """
         args = Args(master_repo_names=MASTER_REPO_NAMES)
         expected_ignore_tests = ["some", "tests"]
-        expected_hamcrest_path = "some/path/to/{}".format(
-            _junit4_runner.HAMCREST_JAR
-        )
-        expected_junit_path = "other/path/to/{}".format(
-            _junit4_runner.JUNIT_JAR
-        )
+        expected_hamcrest_path = HAMCREST_PATH
+        expected_junit_path = JUNIT_PATH
         expected_rtd = RTD
         expected_disable_security = False
         expected_run_student_tests = False
@@ -205,6 +201,50 @@ class TestParseArgs:
         assert junit4_hooks._junit_path == expected_junit_path
         assert junit4_hooks._reference_tests_dir == expected_rtd
         assert junit4_hooks._disable_security == expected_disable_security
+
+    def test_raises_if_argument_junit_jar_does_not_exist(self, junit4_hooks):
+        """Test that the plugin raises if a JUnit jar passed as a command line
+        argument does not exist.
+        """
+        junit_path = "/no/jar/here/" + _junit4_runner.JUNIT_JAR
+        args = Args(junit_path=junit_path, hamcrest_path=HAMCREST_PATH)
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            junit4_hooks.parse_args(args)
+
+        assert "{} is not a file".format(junit_path) in str(exc_info.value)
+
+    def test_raises_if_config_file_junit_jar_does_not_exist(
+        self, junit4_hooks
+    ):
+        """Test that the plugin raises if a JUnit jar specified in the config
+        file does not actually exist. That equates to a situation where the
+        junit_path is already set when parsing arguments, but is not passed as
+        an argument.
+        """
+        junit_path = "/no/jar/here/either/" + _junit4_runner.JUNIT_JAR
+        junit4_hooks._junit_path = junit_path
+        junit4_hooks._hamcrest_path = HAMCREST_PATH
+        args = Args()
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            junit4_hooks.parse_args(args)
+
+        assert "{} is not a file".format(junit_path) in str(exc_info.value)
+
+    def test_raises_if_classpath_junit_jar_does_not_exist(self, junit4_hooks):
+        """Test that the plugin raises if a JUnit jar specified only on the
+        CLASSPATH variable does not actually exist.
+        """
+        junit_path = "/no/jar/on/this/classpath/" + _junit4_runner.JUNIT_JAR
+        junit4_hooks._hamcrest_path = HAMCREST_PATH
+        junit4_hooks._classpath = os.pathsep.join(["/garbage/path/", junit_path, HAMCREST_PATH])
+        args = Args()
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            junit4_hooks.parse_args(args)
+
+        assert "{} is not a file".format(junit_path) in str(exc_info.value)
 
 
 class TestConfigHook:
