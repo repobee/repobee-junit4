@@ -21,7 +21,7 @@ from colored import bg, style
 
 
 SUCCESS_COLOR = bg("dark_green")
-FAILURE_COLOR = bg("red")
+FAILURE_COLOR = bg("yellow")
 
 
 class TestResult(
@@ -53,7 +53,7 @@ class TestResult(
 
     def pretty_result(self, verbose: bool) -> str:
         """Format this test as a pretty-printed message."""
-        title_color = bg("dark_green") if self.success else bg("red")
+        title_color = SUCCESS_COLOR if self.success else FAILURE_COLOR
         num_passed = self.num_passed
         num_failed = self.num_failed
         msg = test_result_header(

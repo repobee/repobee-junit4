@@ -96,7 +96,7 @@ class JUnit4Hooks(plug.Plugin):
 
             msg = self._format_results(test_results, compile_failed)
 
-            status = Status.ERROR if has_failures else Status.SUCCESS
+            status = Status.ERROR if compile_failed else (Status.WARNING if has_failures else Status.SUCCESS)
             return plug.HookResult(SECTION, status, msg)
         except _exception.ActError as exc:
             return exc.hook_result
@@ -332,7 +332,12 @@ class JUnit4Hooks(plug.Plugin):
             for res in test_results
         ]
 
-        msg = os.linesep.join([msg if self._very_verbose else _truncate_lines(msg) for msg in compile_error_messages + test_messages])
+        msg = os.linesep.join(
+            [
+                msg if self._very_verbose else _truncate_lines(msg)
+                for msg in compile_error_messages + test_messages
+            ]
+        )
         if test_messages:
             num_passed = sum([res.num_passed for res in test_results])
             num_failed = sum([res.num_failed for res in test_results])

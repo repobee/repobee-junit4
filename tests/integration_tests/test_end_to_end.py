@@ -144,7 +144,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(BAD_TESTS_REPO)
 
-        assert result.status == Status.ERROR
+        assert result.status == Status.WARNING
         assert "Student wrote a bad test" in str(result.msg)
 
     def test_handles_duplicate_student_tests(self):
@@ -221,7 +221,7 @@ class TestActOnClonedRepo:
         """Test with repo that should have test failures."""
         result = default_hooks.act_on_cloned_repo(FAIL_REPO)
 
-        assert result.status == Status.ERROR
+        assert result.status == Status.WARNING
         assert (
             _output.test_result_header(
                 "PrimeCheckerTest",
@@ -415,7 +415,6 @@ Expected: is <false>
         )
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
-        print(result.msg)
 
         lines = result.msg.split(os.linesep)[1:]  # skip summary line
         assert len(lines) > 1
@@ -456,7 +455,7 @@ class TestSecurityPolicy:
 
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
-        assert result.status == Status.ERROR
+        assert result.status == Status.WARNING
         assert (
             "java.security.AccessControlException: access denied" in result.msg
         )
@@ -467,7 +466,7 @@ class TestSecurityPolicy:
 
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_NETWORK_ACCESS_REPO)
 
-        assert result.status == Status.ERROR
+        assert result.status == Status.WARNING
         assert (
             "java.security.AccessControlException: access denied" in result.msg
         )
