@@ -243,6 +243,34 @@ Expected: is <false>
 2) oneIsNotPrime(PrimeCheckerTest)
 java.lang.AssertionError: 
 Expected: is <false>
+     but: was <true>"""[
+            : _output.DEFAULT_MAX_LINES
+        ]  # noqa: W291
+
+        result = hooks.act_on_cloned_repo(FAIL_REPO)
+
+        assert (
+            _output.test_result_header(
+                "PrimeCheckerTest",
+                NUM_PRIME_CHECKER_TESTS,
+                NUM_PRIME_CHECKER_TESTS - 2,
+                _output.FAILURE_COLOR,
+            )
+            in result.msg
+        )
+        assert expected_verbose_msg in result.msg
+
+    def test_fail_repo_very_verbose(self):
+        """Test verbose output on repo that fails tests."""
+        hooks = setup_hooks(very_verbose=True)
+
+        expected_verbose_msg = """1) isPrimeFalseForComposites(PrimeCheckerTest)
+java.lang.AssertionError: 
+Expected: is <false>
+     but: was <true>
+2) oneIsNotPrime(PrimeCheckerTest)
+java.lang.AssertionError: 
+Expected: is <false>
      but: was <true>"""  # noqa: W291
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
@@ -410,8 +438,8 @@ Expected: is <false>
         hooks = setup_hooks(verbose=True)
         line_length = 20
         monkeypatch.setattr(
-            "repobee_junit4.junit4._truncate_lines",
-            partial(junit4._truncate_lines, max_len=line_length),
+            "repobee_junit4._output._truncate_lines",
+            partial(_output._truncate_lines, max_len=line_length),
         )
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
@@ -429,8 +457,8 @@ Expected: is <false>
         hooks = setup_hooks(very_verbose=True)
         line_length = 20
         monkeypatch.setattr(
-            "repobee_junit4.junit4._truncate_lines",
-            partial(junit4._truncate_lines, max_len=line_length),
+            "repobee_junit4._output._truncate_lines",
+            partial(_output._truncate_lines, max_len=line_length),
         )
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)

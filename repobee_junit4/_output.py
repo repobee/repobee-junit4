@@ -23,6 +23,9 @@ from colored import bg, style
 SUCCESS_COLOR = bg("dark_green")
 FAILURE_COLOR = bg("yellow")
 
+DEFAULT_LINE_LENGTH_LIMIT = 150
+DEFAULT_MAX_LINES = 5
+
 
 class TestResult(
     collections.namedtuple("TestResult", "test_class proc".split())
@@ -104,3 +107,55 @@ def test_result_header(
         title_color, test_class_name, style.RESET, test_results,
     )
     return msg
+
+
+def format_results(test_results, compile_failed, verbose, very_verbose):
+    compile_error_messages = [
+        "{}Compile error:{} {}".format(bg("red"), style.RESET, res.msg)
+        for res in compile_failed
+    ]
+    test_messages = [
+        res.pretty_result(verbose or very_verbose) for res in test_results
+    ]
+
+    msg = os.linesep.join(
+        [
+            msg if very_verbose else _truncate_lines(msg)
+            for msg in compile_error_messages + test_messages
+        ]
+    )
+    if test_messages:
+        num_passed = sum([res.num_passed for res in test_results])
+        num_failed = sum([res.num_failed for res in test_results])
+        total = num_passed + num_failed
+        msg = (
+            "Passed {}/{} tests{}".format(num_passed, total, os.linesep) + msg
+        )
+    return msg
+
+
+def _truncate_lines(
+    string: str,
+    max_len: int = DEFAULT_LINE_LENGTH_LIMIT,
+    max_lines: int = DEFAULT_MAX_LINES,
+):
+    """Truncate lines to max_len characters."""
+    trunc_msg = " #[...]# "
+    if max_len <= len(trunc_msg):
+        raise ValueError(
+            "max_len must be greater than {}".format(len(trunc_msg))
+        )
+
+    effective_len = max_len - len(trunc_msg)
+    head_len = effective_len // 2
+    tail_len = effective_len // 2
+
+    def truncate(s):
+        if len(s) > max_len:
+            return s[:head_len] + trunc_msg + s[-tail_len:]
+        return s
+
+    lines = [truncate(line) for line in string.split(os.linesep)]
+    if len(lines) > max_lines:
+        lines = lines[:max_lines] + [trunc_msg]
+    return os.linesep.join(lines)

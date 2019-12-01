@@ -41,8 +41,6 @@ LOGGER = daiquiri.getLogger(__file__)
 
 ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
-DEFAULT_LINE_LIMIT = 150
-
 
 class JUnit4Hooks(plug.Plugin):
     def __init__(self):
@@ -94,9 +92,15 @@ class JUnit4Hooks(plug.Plugin):
                 map(lambda r: not r.success, test_results)
             )
 
-            msg = self._format_results(test_results, compile_failed)
+            msg = _output.format_results(
+                test_results, compile_failed, self._verbose, self._very_verbose
+            )
 
-            status = Status.ERROR if compile_failed else (Status.WARNING if has_failures else Status.SUCCESS)
+            status = (
+                Status.ERROR
+                if compile_failed
+                else (Status.WARNING if has_failures else Status.SUCCESS)
+            )
             return plug.HookResult(SECTION, status, msg)
         except _exception.ActError as exc:
             return exc.hook_result
@@ -321,33 +325,6 @@ class JUnit4Hooks(plug.Plugin):
 
         return test_classes
 
-    def _format_results(self, test_results, compile_failed):
-
-        compile_error_messages = [
-            "{}Compile error:{} {}".format(bg("red"), style.RESET, res.msg)
-            for res in compile_failed
-        ]
-        test_messages = [
-            res.pretty_result(self._verbose or self._very_verbose)
-            for res in test_results
-        ]
-
-        msg = os.linesep.join(
-            [
-                msg if self._very_verbose else _truncate_lines(msg)
-                for msg in compile_error_messages + test_messages
-            ]
-        )
-        if test_messages:
-            num_passed = sum([res.num_passed for res in test_results])
-            num_failed = sum([res.num_failed for res in test_results])
-            total = num_passed + num_failed
-            msg = (
-                "Passed {}/{} tests{}".format(num_passed, total, os.linesep)
-                + msg
-            )
-        return msg
-
     def _run_tests(
         self, test_prod_class_pairs: ResultPair
     ) -> _output.TestResult:
@@ -437,25 +414,3 @@ class JUnit4Hooks(plug.Plugin):
                 )
             )
         return matches[0] if matches else None
-
-
-def _truncate_lines(string: str, max_len: int = DEFAULT_LINE_LIMIT):
-    """Truncate lines to max_len characters."""
-    trunc_msg = " #[...]# "
-    if max_len <= len(trunc_msg):
-        raise ValueError(
-            "max_len must be greater than {}".format(len(trunc_msg))
-        )
-
-    effective_len = max_len - len(trunc_msg)
-    head_len = effective_len // 2
-    tail_len = effective_len // 2
-
-    def truncate(s):
-        if len(s) > max_len:
-            return s[:head_len] + trunc_msg + s[-tail_len:]
-        return s
-
-    return os.linesep.join(
-        [truncate(line) for line in string.split(os.linesep)]
-    )
