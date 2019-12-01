@@ -12,6 +12,7 @@ import daiquiri
 from repobee_plug import Status
 
 from repobee_junit4 import _java
+from repobee_junit4 import _output
 
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -66,22 +67,6 @@ def _generate_default_security_policy(classpath: str) -> str:
     return _DEFAULT_SECURITY_POLICY_TEMPLATE.format(junit4_jar_path=path)
 
 
-def get_num_failed(test_output: bytes) -> int:
-    """Get the amount of failed tests from the error output of JUnit4."""
-    decoded = test_output.decode(encoding=sys.getdefaultencoding())
-    match = re.search(r"Failures: (\d+)", decoded)
-    # TODO this is a bit unsafe, what if there is no match?
-    return int(match.group(1))
-
-
-def parse_failed_tests(test_output: bytes) -> str:
-    """Return a list of test failure descriptions, excluding stack traces."""
-    decoded = test_output.decode(encoding=sys.getdefaultencoding())
-    return re.findall(
-        r"^\d\) .*(?:\n(?!\s+at).*)*", decoded, flags=re.MULTILINE
-    )
-
-
 def _extract_conforming_package(test_class, prod_class):
     """Extract a package name from the test and production class.
     Raise if the test class and production class have different package
@@ -103,28 +88,23 @@ def run_test_class(
     test_class: pathlib.Path,
     prod_class: pathlib.Path,
     classpath: str,
-    verbose: bool = False,
     security_policy: Optional[pathlib.Path] = None,
-) -> Tuple[str, str]:
+) -> _output.TestResult:
     """Run a single test class on a single production class.
 
     Args:
         test_class: Path to a Java test class.
         prod_class: Path to a Java production class.
         classpath: A classpath to use in the tests.
-        verbose: Whether to output more failure information.
     Returns:
-        ()
+        The completed process.
     """
     package = _extract_conforming_package(test_class, prod_class)
 
     prod_class_dir = _java.extract_package_root(prod_class, package)
     test_class_dir = _java.extract_package_root(test_class, package)
 
-    test_class_name = test_class.name[
-        : -len(test_class.suffix)
-    ]  # remove .java
-    test_class_name = _java.fqn(package, test_class_name)
+    test_class_name = _java.fqn_from_file(test_class)
 
     classpath = _java.generate_classpath(
         test_class_dir, prod_class_dir, classpath=classpath
@@ -147,23 +127,4 @@ def run_test_class(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
 
-    return _extract_results(proc, test_class_name, verbose)
-
-
-def _extract_results(
-    proc: subprocess.CompletedProcess, test_class_name: str, verbose: bool
-) -> Tuple[str, str]:
-    """Extract and format results from a completed test run."""
-    if proc.returncode != 0:
-        status = Status.ERROR
-        msg = "Test class {} failed {} tests".format(
-            test_class_name, get_num_failed(proc.stdout)
-        )
-        if verbose:
-            msg += os.linesep + os.linesep.join(
-                parse_failed_tests(proc.stdout)
-            )
-    else:
-        msg = "Test class {} passed!".format(test_class_name)
-        status = Status.SUCCESS
-    return status, msg
+    return _output.TestResult(test_class=test_class, proc=proc)

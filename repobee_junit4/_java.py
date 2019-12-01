@@ -60,6 +60,19 @@ def generate_classpath(*paths: pathlib.Path, classpath: str = "") -> str:
     return classpath
 
 
+def fqn_from_file(java_filepath: pathlib.Path) -> str:
+    """Extract the expected fully qualified class name for the given java file.
+
+    Args:
+        java_filepath: Path to a .java file.
+    """
+    if not java_filepath.suffix == ".java":
+        raise ValueError("{} not a path to a .java file".format(java_filepath))
+    package = extract_package(java_filepath)
+    simple_name = java_filepath.name[:-len(java_filepath.suffix)]
+    return fqn(package, simple_name)
+
+
 def extract_package(class_: pathlib.Path) -> str:
     """Return the name package of the class. An empty string
     denotes the default package.

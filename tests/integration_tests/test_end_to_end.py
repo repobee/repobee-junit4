@@ -23,6 +23,7 @@ import pytest
 from repobee_plug import Status
 from repobee_plug import exception
 from repobee_junit4 import junit4
+from repobee_junit4 import _output
 
 import envvars
 
@@ -95,6 +96,9 @@ CLASSPATH = "some-stuf:nice/path:path/to/unimportant/lib.jar"
 
 CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
 
+NUM_PRIME_CHECKER_TESTS = 3
+NUM_FIBO_TESTS = 2
+
 
 def setup_hooks(
     reference_tests_dir=RTD,
@@ -140,7 +144,7 @@ class TestActOnClonedRepo:
 
         result = hooks.act_on_cloned_repo(BAD_TESTS_REPO)
 
-        assert result.status == Status.ERROR
+        assert result.status == Status.WARNING
         assert "Student wrote a bad test" in str(result.msg)
 
     def test_handles_duplicate_student_tests(self):
@@ -188,21 +192,45 @@ class TestActOnClonedRepo:
         result = default_hooks.act_on_cloned_repo(ABSTRACT_TEST_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class PrimeCheckerTest passed!" in result.msg
+        assert (
+            _output.test_result_header(
+                "PrimeCheckerTest",
+                NUM_PRIME_CHECKER_TESTS,
+                NUM_PRIME_CHECKER_TESTS,
+                _output.SUCCESS_COLOR,
+            )
+            in result.msg
+        )
 
     def test_correct_repo(self, default_hooks):
         """Test with repo that should not have test failures."""
         result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class FiboTest passed!" in result.msg
+        assert (
+            _output.test_result_header(
+                "FiboTest",
+                NUM_FIBO_TESTS,
+                NUM_FIBO_TESTS,
+                _output.SUCCESS_COLOR,
+            )
+            in result.msg
+        )
 
     def test_fail_repo(self, default_hooks):
         """Test with repo that should have test failures."""
         result = default_hooks.act_on_cloned_repo(FAIL_REPO)
 
-        assert result.status == Status.ERROR
-        assert "Test class PrimeCheckerTest failed 2 tests" in result.msg
+        assert result.status == Status.WARNING
+        assert (
+            _output.test_result_header(
+                "PrimeCheckerTest",
+                NUM_PRIME_CHECKER_TESTS,
+                NUM_PRIME_CHECKER_TESTS - 2,
+                _output.FAILURE_COLOR,
+            )
+            in result.msg
+        )
 
     def test_fail_repo_verbose(self):
         """Test verbose output on repo that fails tests."""
@@ -219,7 +247,15 @@ Expected: is <false>
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 
-        assert "Test class PrimeCheckerTest failed 2 tests" in result.msg
+        assert (
+            _output.test_result_header(
+                "PrimeCheckerTest",
+                NUM_PRIME_CHECKER_TESTS,
+                NUM_PRIME_CHECKER_TESTS - 2,
+                _output.FAILURE_COLOR,
+            )
+            in result.msg
+        )
         assert expected_verbose_msg in result.msg
 
     def test_reference_test_dir_has_no_subdir_for_repo(self, default_hooks):
@@ -294,7 +330,15 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class se.repobee.fibo.FiboTest passed!" in str(result.msg)
+        assert (
+            _output.test_result_header(
+                "se.repobee.fibo.FiboTest",
+                NUM_FIBO_TESTS,
+                NUM_FIBO_TESTS,
+                _output.SUCCESS_COLOR,
+            )
+            in result.msg
+        )
 
     def test_error_when_student_code_is_incorrectly_packaged(
         self, default_hooks
@@ -372,7 +416,7 @@ Expected: is <false>
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 
-        lines = result.msg.split(os.linesep)
+        lines = result.msg.split(os.linesep)[1:]  # skip summary line
         assert len(lines) > 1
         # the first line can be somewhat longer due to staus message
         # and color codes
@@ -411,7 +455,7 @@ class TestSecurityPolicy:
 
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
-        assert result.status == Status.ERROR
+        assert result.status == Status.WARNING
         assert (
             "java.security.AccessControlException: access denied" in result.msg
         )
@@ -422,7 +466,7 @@ class TestSecurityPolicy:
 
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_NETWORK_ACCESS_REPO)
 
-        assert result.status == Status.ERROR
+        assert result.status == Status.WARNING
         assert (
             "java.security.AccessControlException: access denied" in result.msg
         )
@@ -436,4 +480,12 @@ class TestSecurityPolicy:
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class FiboTest passed!" in result.msg
+        assert (
+            _output.test_result_header(
+                "FiboTest",
+                NUM_FIBO_TESTS,
+                NUM_FIBO_TESTS,
+                _output.SUCCESS_COLOR,
+            )
+            in result.msg
+        )

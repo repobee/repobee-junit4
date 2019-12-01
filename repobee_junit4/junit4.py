@@ -10,8 +10,9 @@ This plugin performs a fairly complicated tasks of running test classes from
 pre-specified reference tests on production classes that are dynamically
 discovered in student repositories. See the README for more details.
 
-.. module:: javac
-    :synopsis: Plugin that tries to compile all .java files in a repo.
+.. module:: junit4
+    :synopsis: Plugin that runts JUnit4 test classes on students' production
+        code.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -33,6 +34,7 @@ from repobee_plug import Status
 from repobee_junit4 import _java
 from repobee_junit4 import _junit4_runner
 from repobee_junit4 import _exception
+from repobee_junit4 import _output
 from repobee_junit4 import SECTION
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -86,17 +88,15 @@ class JUnit4Hooks(plug.Plugin):
                 )
 
             compile_succeeded, compile_failed = self._compile_all(path)
-            tests_succeeded, tests_failed = self._run_tests(compile_succeeded)
+            test_results = self._run_tests(compile_succeeded)
 
-            msg = self._format_results(
-                itertools.chain(tests_succeeded, tests_failed, compile_failed)
+            has_failures = compile_failed or any(
+                map(lambda r: not r.success, test_results)
             )
 
-            status = (
-                Status.ERROR
-                if tests_failed or compile_failed
-                else Status.SUCCESS
-            )
+            msg = self._format_results(test_results, compile_failed)
+
+            status = Status.ERROR if compile_failed else (Status.WARNING if has_failures else Status.SUCCESS)
             return plug.HookResult(SECTION, status, msg)
         except _exception.ActError as exc:
             return exc.hook_result
@@ -321,38 +321,36 @@ class JUnit4Hooks(plug.Plugin):
 
         return test_classes
 
-    def _format_results(self, hook_results: Iterable[plug.HookResult]):
-        """Format a list of plug.HookResult tuples as a nice string.
+    def _format_results(self, test_results, compile_failed):
 
-        Args:
-            hook_results: A list of plug.HookResult tuples.
-        Returns:
-            a formatted string
-        """
-        backgrounds = {
-            Status.ERROR: bg("red"),
-            Status.WARNING: bg("yellow"),
-            Status.SUCCESS: bg("dark_green"),
-        }
+        compile_error_messages = [
+            "{}Compile error:{} {}".format(bg("red"), style.RESET, res.msg)
+            for res in compile_failed
+        ]
+        test_messages = [
+            res.pretty_result(self._verbose or self._very_verbose)
+            for res in test_results
+        ]
 
-        def test_result_string(status, msg):
-            return "{}{}:{} {}".format(
-                backgrounds[status],
-                status,
-                style.RESET,
-                _truncate_lines(msg) if self._verbose else msg,
-            )
-
-        return os.linesep.join(
+        msg = os.linesep.join(
             [
-                test_result_string(status, msg)
-                for _, status, msg, _ in hook_results
+                msg if self._very_verbose else _truncate_lines(msg)
+                for msg in compile_error_messages + test_messages
             ]
         )
+        if test_messages:
+            num_passed = sum([res.num_passed for res in test_results])
+            num_failed = sum([res.num_failed for res in test_results])
+            total = num_passed + num_failed
+            msg = (
+                "Passed {}/{} tests{}".format(num_passed, total, os.linesep)
+                + msg
+            )
+        return msg
 
     def _run_tests(
         self, test_prod_class_pairs: ResultPair
-    ) -> Tuple[List[plug.HookResult], List[plug.HookResult]]:
+    ) -> _output.TestResult:
         """Run tests and return the results.
 
         Args:
@@ -360,28 +358,23 @@ class JUnit4Hooks(plug.Plugin):
             ``(test_class_path, prod_class_path)``
 
         Returns:
-            A tuple of lists ``(succeeded, failed)`` containing HookResult
-            tuples.
+            A TestResult for each test class run.
         """
-        succeeded = []
-        failed = []
+        results = []
         classpath = self._generate_classpath()
         with _junit4_runner.security_policy(
             classpath, active=not self._disable_security
         ) as security_policy:
             for test_class, prod_class in test_prod_class_pairs:
-                status, msg = _junit4_runner.run_test_class(
+                test_class_name = _java.fqn_from_file(test_class)
+                test_result = _junit4_runner.run_test_class(
                     test_class,
                     prod_class,
                     classpath=classpath,
-                    verbose=self._verbose or self._very_verbose,
                     security_policy=security_policy,
                 )
-                if status != Status.SUCCESS:
-                    failed.append(plug.HookResult(SECTION, status, msg))
-                else:
-                    succeeded.append(plug.HookResult(SECTION, status, msg))
-            return succeeded, failed
+                results.append(test_result)
+            return results
 
     def _generate_classpath(self, *paths: pathlib.Path) -> str:
         """
