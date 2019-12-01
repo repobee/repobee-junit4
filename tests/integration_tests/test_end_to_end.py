@@ -95,6 +95,9 @@ CLASSPATH = "some-stuf:nice/path:path/to/unimportant/lib.jar"
 
 CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
 
+NUM_PRIME_CHECKER_TESTS = 3
+NUM_FIBO_TESTS = 2
+
 
 def setup_hooks(
     reference_tests_dir=RTD,
@@ -188,14 +191,22 @@ class TestActOnClonedRepo:
         result = default_hooks.act_on_cloned_repo(ABSTRACT_TEST_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class PrimeCheckerTest passed!" in result.msg
+        assert (
+            "Test class PrimeCheckerTest passed all {} tests!".format(
+                NUM_PRIME_CHECKER_TESTS
+            )
+            in result.msg
+        )
 
     def test_correct_repo(self, default_hooks):
         """Test with repo that should not have test failures."""
         result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class FiboTest passed!" in result.msg
+        assert (
+            "Test class FiboTest passed all {} tests!".format(NUM_FIBO_TESTS)
+            in result.msg
+        )
 
     def test_fail_repo(self, default_hooks):
         """Test with repo that should have test failures."""
@@ -294,7 +305,11 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class se.repobee.fibo.FiboTest passed!" in str(result.msg)
+        assert "Test class se.repobee.fibo.FiboTest passed all {} tests!".format(
+            NUM_FIBO_TESTS
+        ) in str(
+            result.msg
+        )
 
     def test_error_when_student_code_is_incorrectly_packaged(
         self, default_hooks
@@ -436,4 +451,4 @@ class TestSecurityPolicy:
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class FiboTest passed!" in result.msg
+        assert "Test class FiboTest passed all {} tests!".format(NUM_FIBO_TESTS) in result.msg

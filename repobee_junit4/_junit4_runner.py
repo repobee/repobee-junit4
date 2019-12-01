@@ -74,6 +74,13 @@ def get_num_failed(test_output: bytes) -> int:
     return int(match.group(1))
 
 
+def get_num_passed(test_output: bytes) -> int:
+    """Get the amount of passed tests from the output of JUnit4."""
+    decoded = test_output.decode(encoding=sys.getdefaultencoding())
+    match = re.search(r"OK \((\d+) tests\)", decoded)
+    return int(match.group(1))
+
+
 def parse_failed_tests(test_output: bytes) -> str:
     """Return a list of test failure descriptions, excluding stack traces."""
     decoded = test_output.decode(encoding=sys.getdefaultencoding())
@@ -164,6 +171,8 @@ def _extract_results(
                 parse_failed_tests(proc.stdout)
             )
     else:
-        msg = "Test class {} passed!".format(test_class_name)
+        msg = "Test class {} passed all {} tests!".format(
+            test_class_name, get_num_passed(proc.stdout)
+        )
         status = Status.SUCCESS
     return status, msg
