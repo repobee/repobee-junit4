@@ -23,6 +23,7 @@ import pytest
 from repobee_plug import Status
 from repobee_plug import exception
 from repobee_junit4 import junit4
+from repobee_junit4 import _output
 
 import envvars
 
@@ -192,7 +193,7 @@ class TestActOnClonedRepo:
 
         assert result.status == Status.SUCCESS
         assert (
-            junit4.success_message("PrimeCheckerTest", NUM_PRIME_CHECKER_TESTS)
+            _output.success_message("PrimeCheckerTest", NUM_PRIME_CHECKER_TESTS)
             in result.msg
         )
 
@@ -201,7 +202,7 @@ class TestActOnClonedRepo:
         result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
 
         assert result.status == Status.SUCCESS
-        assert junit4.success_message("FiboTest", NUM_FIBO_TESTS) in result.msg
+        assert _output.success_message("FiboTest", NUM_FIBO_TESTS) in result.msg
 
     def test_fail_repo(self, default_hooks):
         """Test with repo that should have test failures."""
@@ -301,7 +302,7 @@ Expected: is <false>
 
         assert result.status == Status.SUCCESS
         assert (
-            junit4.success_message("se.repobee.fibo.FiboTest", NUM_FIBO_TESTS)
+            _output.success_message("se.repobee.fibo.FiboTest", NUM_FIBO_TESTS)
             in result.msg
         )
 
@@ -445,7 +446,4 @@ class TestSecurityPolicy:
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert (
-                junit4.success_message("FiboTest", NUM_FIBO_TESTS)
-            in result.msg
-        )
+        assert _output.success_message("FiboTest", NUM_FIBO_TESTS) in result.msg

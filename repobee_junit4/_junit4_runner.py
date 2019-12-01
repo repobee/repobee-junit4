@@ -12,6 +12,7 @@ import daiquiri
 from repobee_plug import Status
 
 from repobee_junit4 import _java
+from repobee_junit4 import _output
 
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -88,7 +89,7 @@ def run_test_class(
     prod_class: pathlib.Path,
     classpath: str,
     security_policy: Optional[pathlib.Path] = None,
-) -> subprocess.CompletedProcess:
+) -> _output.TestResult:
     """Run a single test class on a single production class.
 
     Args:
@@ -126,4 +127,4 @@ def run_test_class(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
 
-    return proc
+    return _output.TestResult(test_class=test_class, proc=proc)

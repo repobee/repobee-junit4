@@ -15,7 +15,53 @@ from typing import Tuple
 
 from repobee_plug import Status
 
-TestResult = collections.namedtuple("TestResult", "")
+from repobee_junit4 import _java
+
+
+class TestResult(
+    collections.namedtuple("TestResult", "test_class proc".split())
+):
+    @property
+    def fqn(self):
+        return _java.fqn_from_file(self.test_class)
+
+    @property
+    def success(self):
+        return self.proc.returncode == 0
+
+    @property
+    def status(self):
+        return Status.SUCCESS if self.success else Status.ERROR
+
+    @property
+    def num_failed(self):
+        if self.success:
+            return 0
+        return get_num_failed(self.proc.stdout)
+
+    @property
+    def num_passed(self):
+        if not self.success:
+            return 0
+        return get_num_passed(self.proc.stdout)
+
+    @property
+    def test_failures(self):
+        return parse_failed_tests(self.proc.stdout)
+
+    def pretty_result(self, verbose: bool) -> "TestResult":
+        """Format this test as a pretty-printed message."""
+        if not self.success:
+            msg = "Test class {} failed {} tests".format(
+                self.fqn, self.num_failed
+            )
+            if verbose:
+                msg += os.linesep + os.linesep.join(self.test_failures)
+        else:
+            msg = "Test class {} passed all {} tests!".format(
+                self.fqn, self.num_passed
+            )
+        return msg
 
 
 def get_num_failed(test_output: bytes) -> int:
@@ -41,22 +87,28 @@ def parse_failed_tests(test_output: bytes) -> str:
     )
 
 
-def extract_results(
-    proc: subprocess.CompletedProcess, test_class: str, verbose: bool
-) -> Tuple[str, str]:
-    """Extract and format results from a completed test run."""
-    if proc.returncode != 0:
-        status = Status.ERROR
-        msg = "Test class {} failed {} tests".format(
-            test_class, get_num_failed(proc.stdout)
-        )
-        if verbose:
-            msg += os.linesep + os.linesep.join(
-                parse_failed_tests(proc.stdout)
-            )
-    else:
-        msg = "Test class {} passed all {} tests!".format(
-            test_class, get_num_passed(proc.stdout)
-        )
-        status = Status.SUCCESS
-    return status, msg
+def success_message(test_class: str, num_tests: int) -> str:
+    """Generate a success message for the provided test class.
+
+    Args:
+        test_class: Fully qualified name of the test class.
+        num_tests: Amount of tests that were run.
+    Returns:
+        A success message.
+    """
+    return "Test class {} passed all {} tests!".format(test_class, num_tests)
+
+
+def failure_message(test_class: str, num_failed: int, num_tests: int) -> str:
+    """Generate a failure message for the provided test class.
+
+    Args:
+        test_class: Fully qualified name of the test class.
+        num_failed: The amount of tests that failed.
+        num_tests: The total amount of tests that were run.
+    Returns:
+        A failure message.
+    """
+    return "Test class {} failed {} ouf of {} tests".format(
+        test_class, num_failed, num_tests
+    )

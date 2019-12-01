@@ -44,33 +44,6 @@ ResultPair = Tuple[pathlib.Path, pathlib.Path]
 DEFAULT_LINE_LIMIT = 150
 
 
-def success_message(test_class: str, num_tests: int) -> str:
-    """Generate a success message for the provided test class.
-
-    Args:
-        test_class: Fully qualified name of the test class.
-        num_tests: Amount of tests that were run.
-    Returns:
-        A success message.
-    """
-    return "Test class {} passed all {} tests!".format(test_class, num_tests)
-
-
-def failure_message(test_class: str, num_failed: int, num_tests: int) -> str:
-    """Generate a failure message for the provided test class.
-
-    Args:
-        test_class: Fully qualified name of the test class.
-        num_failed: The amount of tests that failed.
-        num_tests: The total amount of tests that were run.
-    Returns:
-        A failure message.
-    """
-    return "Test class {} failed {} ouf of {} tests".format(
-        test_class, num_failed, num_tests
-    )
-
-
 class JUnit4Hooks(plug.Plugin):
     def __init__(self):
         self._master_repo_names = []
@@ -115,15 +88,17 @@ class JUnit4Hooks(plug.Plugin):
                 )
 
             compile_succeeded, compile_failed = self._compile_all(path)
-            tests_succeeded, tests_failed = self._run_tests(compile_succeeded)
+            test_results = self._run_tests(compile_succeeded)
 
-            msg = self._format_results(
-                itertools.chain(tests_succeeded, tests_failed, compile_failed)
+            has_failures = compile_failed or any(
+                map(lambda r: not r.success, test_results)
             )
+
+            msg = self._format_results(test_results, compile_failed)
 
             status = (
                 Status.ERROR
-                if tests_failed or compile_failed
+                if has_failures
                 else Status.SUCCESS
             )
             return plug.HookResult(SECTION, status, msg)
@@ -350,21 +325,14 @@ class JUnit4Hooks(plug.Plugin):
 
         return test_classes
 
-    def _format_results(self, hook_results: Iterable[plug.HookResult]):
-        """Format a list of plug.HookResult tuples as a nice string.
-
-        Args:
-            hook_results: A list of plug.HookResult tuples.
-        Returns:
-            a formatted string
-        """
+    def _format_results(self, test_results, compile_failed):
         backgrounds = {
             Status.ERROR: bg("red"),
             Status.WARNING: bg("yellow"),
             Status.SUCCESS: bg("dark_green"),
         }
 
-        def test_result_string(status, msg):
+        def result_string(status, msg):
             return "{}{}:{} {}".format(
                 backgrounds[status],
                 status,
@@ -372,16 +340,21 @@ class JUnit4Hooks(plug.Plugin):
                 _truncate_lines(msg) if self._verbose else msg,
             )
 
-        return os.linesep.join(
-            [
-                test_result_string(status, msg)
-                for _, status, msg, _ in hook_results
-            ]
-        )
+        compile_error_messages = [
+            result_string(res.status, res.msg) for res in compile_failed
+        ]
+        test_messages = [
+            result_string(
+                res.status,
+                res.pretty_result(self._verbose or self._very_verbose),
+            )
+            for res in test_results
+        ]
+        return os.linesep.join(compile_error_messages + test_messages)
 
     def _run_tests(
         self, test_prod_class_pairs: ResultPair
-    ) -> Tuple[List[plug.HookResult], List[plug.HookResult]]:
+    ) -> _output.TestResult:
         """Run tests and return the results.
 
         Args:
@@ -389,31 +362,23 @@ class JUnit4Hooks(plug.Plugin):
             ``(test_class_path, prod_class_path)``
 
         Returns:
-            A tuple of lists ``(succeeded, failed)`` containing HookResult
-            tuples.
+            A TestResult for each test class run.
         """
-        succeeded = []
-        failed = []
+        results = []
         classpath = self._generate_classpath()
         with _junit4_runner.security_policy(
             classpath, active=not self._disable_security
         ) as security_policy:
             for test_class, prod_class in test_prod_class_pairs:
                 test_class_name = _java.fqn_from_file(test_class)
-                proc = _junit4_runner.run_test_class(
+                test_result = _junit4_runner.run_test_class(
                     test_class,
                     prod_class,
                     classpath=classpath,
                     security_policy=security_policy,
                 )
-                status, msg = _output.extract_results(
-                    proc, test_class_name, self._verbose or self._very_verbose
-                )
-                if status != Status.SUCCESS:
-                    failed.append(plug.HookResult(SECTION, status, msg))
-                else:
-                    succeeded.append(plug.HookResult(SECTION, status, msg))
-            return succeeded, failed
+                results.append(test_result)
+            return results
 
     def _generate_classpath(self, *paths: pathlib.Path) -> str:
         """
