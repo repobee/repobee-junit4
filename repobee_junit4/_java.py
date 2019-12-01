@@ -44,8 +44,8 @@ def is_abstract_class(class_: pathlib.Path) -> bool:
 
 
 def generate_classpath(*paths: pathlib.Path, classpath: str = "") -> str:
-    """Return a classpath including all of the paths provided. Always appends
-    the current working directory to the end.
+    """Return a classpath including all of the paths provided prepended to the
+    classpath. Always appends the current working directory to the end.
 
     Args:
         paths: One or more paths to add to the classpath.
@@ -54,7 +54,7 @@ def generate_classpath(*paths: pathlib.Path, classpath: str = "") -> str:
         a formated classpath to be used with ``java`` and ``javac``
     """
     for path in paths:
-        classpath += ":{!s}".format(path)
+        classpath = "{}:{}".format(path, classpath)
 
     classpath += ":."
     return classpath

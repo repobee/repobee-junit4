@@ -134,6 +134,9 @@ class JUnit4Hooks(plug.Plugin):
         )
         self._run_student_tests = args.run_student_tests
 
+        # at this point, the jars must have been specified and exist
+        self._check_jars_exist()
+
     def clone_parser_hook(
         self, clone_parser: configparser.ConfigParser
     ) -> None:
@@ -407,6 +410,40 @@ class JUnit4Hooks(plug.Plugin):
         if self._junit_path:
             paths.append(self._junit_path)
         return _java.generate_classpath(*paths, classpath=self._classpath)
+
+    def _check_jars_exist(self):
+        """Check that the specified jar files actually exist."""
+        junit_path = self._junit_path or self._parse_from_classpath(
+            _junit4_runner.JUNIT_JAR
+        )
+        hamcrest_path = self._hamcrest_path or self._parse_from_classpath(
+            _junit4_runner.HAMCREST_JAR
+        )
+        for raw_path in (junit_path, hamcrest_path):
+            if not pathlib.Path(raw_path).is_file():
+                raise plug.PlugError(
+                    "{} is not a file, please check the filepath you specified".format(
+                        raw_path
+                    )
+                )
+
+    def _parse_from_classpath(self, filename: str) -> pathlib.Path:
+        """Parse the full path to the given filename from the classpath, if
+        it's on the classpath at all. If there are several hits, take the first
+        one, and if there are none, raise a PlugError.
+        """
+        matches = [
+            pathlib.Path(p)
+            for p in self._classpath.split(os.pathsep)
+            if p.endswith(filename)
+        ]
+        if not matches:
+            raise plug.PlugError(
+                "expected to find {} on the CLASSPATH variable".format(
+                    filename
+                )
+            )
+        return matches[0] if matches else None
 
 
 def _truncate_lines(string: str, max_len: int = DEFAULT_LINE_LIMIT):
