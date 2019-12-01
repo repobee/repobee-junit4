@@ -96,11 +96,7 @@ class JUnit4Hooks(plug.Plugin):
 
             msg = self._format_results(test_results, compile_failed)
 
-            status = (
-                Status.ERROR
-                if has_failures
-                else Status.SUCCESS
-            )
+            status = Status.ERROR if has_failures else Status.SUCCESS
             return plug.HookResult(SECTION, status, msg)
         except _exception.ActError as exc:
             return exc.hook_result
@@ -326,31 +322,26 @@ class JUnit4Hooks(plug.Plugin):
         return test_classes
 
     def _format_results(self, test_results, compile_failed):
-        backgrounds = {
-            Status.ERROR: bg("red"),
-            Status.WARNING: bg("yellow"),
-            Status.SUCCESS: bg("dark_green"),
-        }
-
-        def result_string(status, msg):
-            return "{}{}:{} {}".format(
-                backgrounds[status],
-                status,
-                style.RESET,
-                _truncate_lines(msg) if self._verbose else msg,
-            )
 
         compile_error_messages = [
-            result_string(res.status, res.msg) for res in compile_failed
+            "{}Compile error:{} {}".format(bg("red"), style.RESET, res.msg)
+            for res in compile_failed
         ]
         test_messages = [
-            result_string(
-                res.status,
-                res.pretty_result(self._verbose or self._very_verbose),
-            )
+            res.pretty_result(self._verbose or self._very_verbose)
             for res in test_results
         ]
-        return os.linesep.join(compile_error_messages + test_messages)
+
+        msg = os.linesep.join([msg if self._very_verbose else _truncate_lines(msg) for msg in compile_error_messages + test_messages])
+        if test_messages:
+            num_passed = sum([res.num_passed for res in test_results])
+            num_failed = sum([res.num_failed for res in test_results])
+            total = num_passed + num_failed
+            msg = (
+                "Passed {}/{} tests{}".format(num_passed, total, os.linesep)
+                + msg
+            )
+        return msg
 
     def _run_tests(
         self, test_prod_class_pairs: ResultPair

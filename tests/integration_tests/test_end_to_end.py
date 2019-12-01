@@ -193,7 +193,12 @@ class TestActOnClonedRepo:
 
         assert result.status == Status.SUCCESS
         assert (
-            _output.success_message("PrimeCheckerTest", NUM_PRIME_CHECKER_TESTS)
+            _output.test_result_header(
+                "PrimeCheckerTest",
+                NUM_PRIME_CHECKER_TESTS,
+                NUM_PRIME_CHECKER_TESTS,
+                _output.SUCCESS_COLOR,
+            )
             in result.msg
         )
 
@@ -202,14 +207,30 @@ class TestActOnClonedRepo:
         result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
 
         assert result.status == Status.SUCCESS
-        assert _output.success_message("FiboTest", NUM_FIBO_TESTS) in result.msg
+        assert (
+            _output.test_result_header(
+                "FiboTest",
+                NUM_FIBO_TESTS,
+                NUM_FIBO_TESTS,
+                _output.SUCCESS_COLOR,
+            )
+            in result.msg
+        )
 
     def test_fail_repo(self, default_hooks):
         """Test with repo that should have test failures."""
         result = default_hooks.act_on_cloned_repo(FAIL_REPO)
 
         assert result.status == Status.ERROR
-        assert "Test class PrimeCheckerTest failed 2 tests" in result.msg
+        assert (
+            _output.test_result_header(
+                "PrimeCheckerTest",
+                NUM_PRIME_CHECKER_TESTS,
+                NUM_PRIME_CHECKER_TESTS - 2,
+                _output.FAILURE_COLOR,
+            )
+            in result.msg
+        )
 
     def test_fail_repo_verbose(self):
         """Test verbose output on repo that fails tests."""
@@ -226,7 +247,15 @@ Expected: is <false>
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
 
-        assert "Test class PrimeCheckerTest failed 2 tests" in result.msg
+        assert (
+            _output.test_result_header(
+                "PrimeCheckerTest",
+                NUM_PRIME_CHECKER_TESTS,
+                NUM_PRIME_CHECKER_TESTS - 2,
+                _output.FAILURE_COLOR,
+            )
+            in result.msg
+        )
         assert expected_verbose_msg in result.msg
 
     def test_reference_test_dir_has_no_subdir_for_repo(self, default_hooks):
@@ -302,7 +331,12 @@ Expected: is <false>
 
         assert result.status == Status.SUCCESS
         assert (
-            _output.success_message("se.repobee.fibo.FiboTest", NUM_FIBO_TESTS)
+            _output.test_result_header(
+                "se.repobee.fibo.FiboTest",
+                NUM_FIBO_TESTS,
+                NUM_FIBO_TESTS,
+                _output.SUCCESS_COLOR,
+            )
             in result.msg
         )
 
@@ -381,8 +415,9 @@ Expected: is <false>
         )
 
         result = hooks.act_on_cloned_repo(FAIL_REPO)
+        print(result.msg)
 
-        lines = result.msg.split(os.linesep)
+        lines = result.msg.split(os.linesep)[1:]  # skip summary line
         assert len(lines) > 1
         # the first line can be somewhat longer due to staus message
         # and color codes
@@ -446,4 +481,12 @@ class TestSecurityPolicy:
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert _output.success_message("FiboTest", NUM_FIBO_TESTS) in result.msg
+        assert (
+            _output.test_result_header(
+                "FiboTest",
+                NUM_FIBO_TESTS,
+                NUM_FIBO_TESTS,
+                _output.SUCCESS_COLOR,
+            )
+            in result.msg
+        )

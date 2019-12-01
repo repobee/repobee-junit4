@@ -17,6 +17,12 @@ from repobee_plug import Status
 
 from repobee_junit4 import _java
 
+from colored import bg, style
+
+
+SUCCESS_COLOR = bg("dark_green")
+FAILURE_COLOR = bg("red")
+
 
 class TestResult(
     collections.namedtuple("TestResult", "test_class proc".split())
@@ -35,51 +41,53 @@ class TestResult(
 
     @property
     def num_failed(self):
-        if self.success:
-            return 0
-        return get_num_failed(self.proc.stdout)
+        return _get_num_failed(self.proc.stdout)
 
     @property
     def num_passed(self):
-        if not self.success:
-            return 0
-        return get_num_passed(self.proc.stdout)
+        return _get_num_passed(self.proc.stdout)
 
     @property
     def test_failures(self):
-        return parse_failed_tests(self.proc.stdout)
+        return _parse_failed_tests(self.proc.stdout)
 
-    def pretty_result(self, verbose: bool) -> "TestResult":
+    def pretty_result(self, verbose: bool) -> str:
         """Format this test as a pretty-printed message."""
-        if not self.success:
-            msg = "Test class {} failed {} tests".format(
-                self.fqn, self.num_failed
-            )
-            if verbose:
-                msg += os.linesep + os.linesep.join(self.test_failures)
-        else:
-            msg = "Test class {} passed all {} tests!".format(
-                self.fqn, self.num_passed
-            )
+        title_color = bg("dark_green") if self.success else bg("red")
+        num_passed = self.num_passed
+        num_failed = self.num_failed
+        msg = test_result_header(
+            self.fqn, num_passed + num_failed, num_passed, title_color
+        )
+        if not self.success and verbose:
+            msg += os.linesep + os.linesep.join(self.test_failures)
         return msg
 
 
-def get_num_failed(test_output: bytes) -> int:
+def _get_num_failed(test_output: bytes) -> int:
     """Get the amount of failed tests from the error output of JUnit4."""
     decoded = test_output.decode(encoding=sys.getdefaultencoding())
     match = re.search(r"Failures: (\d+)", decoded)
-    # TODO this is a bit unsafe, what if there is no match?
-    return int(match.group(1))
+    return int(match.group(1)) if match else 0
 
 
-def get_num_passed(test_output: bytes) -> int:
+def _get_num_tests(test_output: bytes) -> int:
+    """Get the total amount of tests. Only use this if there were test failures!"""
+    decoded = test_output.decode(encoding=sys.getdefaultencoding())
+    match = re.search(r"Tests run: (\d+)", decoded)
+    return int(match.group(1)) if match else 0
+
+
+def _get_num_passed(test_output: bytes) -> int:
     """Get the amount of passed tests from the output of JUnit4."""
     decoded = test_output.decode(encoding=sys.getdefaultencoding())
     match = re.search(r"OK \((\d+) tests\)", decoded)
+    if not match:  # there were failures
+        return _get_num_tests(test_output) - _get_num_failed(test_output)
     return int(match.group(1))
 
 
-def parse_failed_tests(test_output: bytes) -> str:
+def _parse_failed_tests(test_output: bytes) -> str:
     """Return a list of test failure descriptions, excluding stack traces."""
     decoded = test_output.decode(encoding=sys.getdefaultencoding())
     return re.findall(
@@ -87,28 +95,12 @@ def parse_failed_tests(test_output: bytes) -> str:
     )
 
 
-def success_message(test_class: str, num_tests: int) -> str:
-    """Generate a success message for the provided test class.
-
-    Args:
-        test_class: Fully qualified name of the test class.
-        num_tests: Amount of tests that were run.
-    Returns:
-        A success message.
-    """
-    return "Test class {} passed all {} tests!".format(test_class, num_tests)
-
-
-def failure_message(test_class: str, num_failed: int, num_tests: int) -> str:
-    """Generate a failure message for the provided test class.
-
-    Args:
-        test_class: Fully qualified name of the test class.
-        num_failed: The amount of tests that failed.
-        num_tests: The total amount of tests that were run.
-    Returns:
-        A failure message.
-    """
-    return "Test class {} failed {} ouf of {} tests".format(
-        test_class, num_failed, num_tests
+def test_result_header(
+    test_class_name: str, num_tests: int, num_passed: int, title_color: bg
+) -> str:
+    """Return the header line for a test result."""
+    test_results = "Passed {}/{} tests".format(num_passed, num_tests)
+    msg = "{}{}{}: {}".format(
+        title_color, test_class_name, style.RESET, test_results,
     )
+    return msg
