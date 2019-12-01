@@ -192,9 +192,7 @@ class TestActOnClonedRepo:
 
         assert result.status == Status.SUCCESS
         assert (
-            "Test class PrimeCheckerTest passed all {} tests!".format(
-                NUM_PRIME_CHECKER_TESTS
-            )
+            junit4.success_message("PrimeCheckerTest", NUM_PRIME_CHECKER_TESTS)
             in result.msg
         )
 
@@ -203,10 +201,7 @@ class TestActOnClonedRepo:
         result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
 
         assert result.status == Status.SUCCESS
-        assert (
-            "Test class FiboTest passed all {} tests!".format(NUM_FIBO_TESTS)
-            in result.msg
-        )
+        assert junit4.success_message("FiboTest", NUM_FIBO_TESTS) in result.msg
 
     def test_fail_repo(self, default_hooks):
         """Test with repo that should have test failures."""
@@ -305,10 +300,9 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class se.repobee.fibo.FiboTest passed all {} tests!".format(
-            NUM_FIBO_TESTS
-        ) in str(
-            result.msg
+        assert (
+            junit4.success_message("se.repobee.fibo.FiboTest", NUM_FIBO_TESTS)
+            in result.msg
         )
 
     def test_error_when_student_code_is_incorrectly_packaged(
@@ -451,4 +445,7 @@ class TestSecurityPolicy:
         result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
 
         assert result.status == Status.SUCCESS
-        assert "Test class FiboTest passed all {} tests!".format(NUM_FIBO_TESTS) in result.msg
+        assert (
+                junit4.success_message("FiboTest", NUM_FIBO_TESTS)
+            in result.msg
+        )

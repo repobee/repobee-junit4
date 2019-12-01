@@ -10,8 +10,9 @@ This plugin performs a fairly complicated tasks of running test classes from
 pre-specified reference tests on production classes that are dynamically
 discovered in student repositories. See the README for more details.
 
-.. module:: javac
-    :synopsis: Plugin that tries to compile all .java files in a repo.
+.. module:: junit4
+    :synopsis: Plugin that runts JUnit4 test classes on students' production
+        code.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -33,6 +34,7 @@ from repobee_plug import Status
 from repobee_junit4 import _java
 from repobee_junit4 import _junit4_runner
 from repobee_junit4 import _exception
+from repobee_junit4 import _output
 from repobee_junit4 import SECTION
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -40,6 +42,33 @@ LOGGER = daiquiri.getLogger(__file__)
 ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
 DEFAULT_LINE_LIMIT = 150
+
+
+def success_message(test_class: str, num_tests: int) -> str:
+    """Generate a success message for the provided test class.
+
+    Args:
+        test_class: Fully qualified name of the test class.
+        num_tests: Amount of tests that were run.
+    Returns:
+        A success message.
+    """
+    return "Test class {} passed all {} tests!".format(test_class, num_tests)
+
+
+def failure_message(test_class: str, num_failed: int, num_tests: int) -> str:
+    """Generate a failure message for the provided test class.
+
+    Args:
+        test_class: Fully qualified name of the test class.
+        num_failed: The amount of tests that failed.
+        num_tests: The total amount of tests that were run.
+    Returns:
+        A failure message.
+    """
+    return "Test class {} failed {} ouf of {} tests".format(
+        test_class, num_failed, num_tests
+    )
 
 
 class JUnit4Hooks(plug.Plugin):
@@ -370,12 +399,15 @@ class JUnit4Hooks(plug.Plugin):
             classpath, active=not self._disable_security
         ) as security_policy:
             for test_class, prod_class in test_prod_class_pairs:
-                status, msg = _junit4_runner.run_test_class(
+                test_class_name = _java.fqn_from_file(test_class)
+                proc = _junit4_runner.run_test_class(
                     test_class,
                     prod_class,
                     classpath=classpath,
-                    verbose=self._verbose or self._very_verbose,
                     security_policy=security_policy,
+                )
+                status, msg = _output.extract_results(
+                    proc, test_class_name, self._verbose or self._very_verbose
                 )
                 if status != Status.SUCCESS:
                     failed.append(plug.HookResult(SECTION, status, msg))
