@@ -8,20 +8,19 @@
 import sys
 import os
 import re
-import subprocess
 import collections
 
-from typing import Tuple
+from colored import bg, style
 
 from repobee_plug import Status
 
 from repobee_junit4 import _java
 
-from colored import bg, style
-
-
 SUCCESS_COLOR = bg("dark_green")
 FAILURE_COLOR = bg("yellow")
+
+DEFAULT_LINE_LENGTH_LIMIT = 150
+DEFAULT_MAX_LINES = 10
 
 
 class TestResult(
@@ -72,7 +71,9 @@ def _get_num_failed(test_output: bytes) -> int:
 
 
 def _get_num_tests(test_output: bytes) -> int:
-    """Get the total amount of tests. Only use this if there were test failures!"""
+    """Get the total amount of tests. Only use this if there were test
+    failures!
+    """
     decoded = test_output.decode(encoding=sys.getdefaultencoding())
     match = re.search(r"Tests run: (\d+)", decoded)
     return int(match.group(1)) if match else 0
@@ -101,6 +102,65 @@ def test_result_header(
     """Return the header line for a test result."""
     test_results = "Passed {}/{} tests".format(num_passed, num_tests)
     msg = "{}{}{}: {}".format(
-        title_color, test_class_name, style.RESET, test_results,
+        title_color, test_class_name, style.RESET, test_results
     )
     return msg
+
+
+def format_results(test_results, compile_failed, verbose, very_verbose):
+    def format_compile_error(res):
+        msg = "{}Compile error:{} {}".format(bg("red"), style.RESET, res.msg)
+        if very_verbose:
+            return msg
+        elif verbose:
+            return _truncate_lines(msg)
+        else:
+            return msg.split("\n")[0]
+
+    def format_test_result(res):
+        msg = res.pretty_result(verbose or very_verbose)
+        if very_verbose:
+            return msg
+        elif verbose:
+            return _truncate_lines(msg, max_lines=sys.maxsize)
+        else:
+            return msg.split("\n")[0]
+
+    compile_error_messages = list(map(format_compile_error, compile_failed))
+    test_messages = list(map(format_test_result, test_results))
+    msg = os.linesep.join(compile_error_messages + test_messages)
+    if test_messages:
+        num_passed = sum([res.num_passed for res in test_results])
+        num_failed = sum([res.num_failed for res in test_results])
+        total = num_passed + num_failed
+        msg = (
+            "Passed {}/{} tests{}".format(num_passed, total, os.linesep) + msg
+        )
+    return msg
+
+
+def _truncate_lines(
+    string: str,
+    max_len: int = DEFAULT_LINE_LENGTH_LIMIT,
+    max_lines: int = DEFAULT_MAX_LINES,
+):
+    """Truncate lines to max_len characters."""
+    trunc_msg = " #[...]# "
+    if max_len <= len(trunc_msg):
+        raise ValueError(
+            "max_len must be greater than {}".format(len(trunc_msg))
+        )
+
+    effective_len = max_len - len(trunc_msg)
+    head_len = effective_len // 2
+    tail_len = effective_len // 2
+
+    def truncate(s):
+        if len(s) > max_len:
+            return s[:head_len] + trunc_msg + s[-tail_len:]
+        return s
+
+    lines = [truncate(line) for line in string.split(os.linesep)]
+    if len(lines) > max_lines:
+        lines = lines[: max_lines - 1] + [trunc_msg]
+    return os.linesep.join(lines)
