@@ -20,7 +20,7 @@ SUCCESS_COLOR = bg("dark_green")
 FAILURE_COLOR = bg("yellow")
 
 DEFAULT_LINE_LENGTH_LIMIT = 150
-DEFAULT_MAX_LINES = 5
+DEFAULT_MAX_LINES = 10
 
 
 class TestResult(
