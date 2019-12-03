@@ -110,7 +110,7 @@ def run_test_class(
         test_class_dir, prod_class_dir, classpath=classpath
     )
 
-    command = ["java"]
+    command = ["java", "-enableassertions"]
     if security_policy:
         command += [
             "-Djava.security.manager",
