@@ -16,17 +16,14 @@ discovered in student repositories. See the README for more details.
 
 .. moduleauthor:: Simon Larsén
 """
-import itertools
 import os
 import argparse
 import configparser
 import pathlib
-import collections
-from typing import Union, Iterable, Tuple, List, Any
+from typing import Union, Tuple, List
 
 
 import daiquiri
-from colored import bg, style
 
 import repobee_plug as plug
 from repobee_plug import Status
@@ -343,7 +340,6 @@ class JUnit4Hooks(plug.Plugin):
             classpath, active=not self._disable_security
         ) as security_policy:
             for test_class, prod_class in test_prod_class_pairs:
-                test_class_name = _java.fqn_from_file(test_class)
                 test_result = _junit4_runner.run_test_class(
                     test_class,
                     prod_class,
@@ -392,9 +388,8 @@ class JUnit4Hooks(plug.Plugin):
         for raw_path in (junit_path, hamcrest_path):
             if not pathlib.Path(raw_path).is_file():
                 raise plug.PlugError(
-                    "{} is not a file, please check the filepath you specified".format(
-                        raw_path
-                    )
+                    "{} is not a file, please check the filepath you "
+                    "specified".format(raw_path)
                 )
 
     def _parse_from_classpath(self, filename: str) -> pathlib.Path:

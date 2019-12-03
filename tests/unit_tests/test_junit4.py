@@ -186,7 +186,6 @@ class TestParseArgs:
         expected_junit_path = JUNIT_PATH
         expected_rtd = RTD
         expected_disable_security = False
-        expected_run_student_tests = False
 
         junit4_hooks._ignore_tests = expected_ignore_tests
         junit4_hooks._hamcrest_path = expected_hamcrest_path
@@ -238,7 +237,9 @@ class TestParseArgs:
         """
         junit_path = "/no/jar/on/this/classpath/" + _junit4_runner.JUNIT_JAR
         junit4_hooks._hamcrest_path = HAMCREST_PATH
-        junit4_hooks._classpath = os.pathsep.join(["/garbage/path/", junit_path, HAMCREST_PATH])
+        junit4_hooks._classpath = os.pathsep.join(
+            ["/garbage/path/", junit_path, HAMCREST_PATH]
+        )
         args = Args()
 
         with pytest.raises(plug.PlugError) as exc_info:

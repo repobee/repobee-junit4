@@ -5,11 +5,9 @@ import sys
 import subprocess
 import os
 import contextlib
-from typing import Tuple, Optional
+from typing import Optional
 
 import daiquiri
-
-from repobee_plug import Status
 
 from repobee_junit4 import _java
 from repobee_junit4 import _output

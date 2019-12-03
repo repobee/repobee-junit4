@@ -170,7 +170,9 @@ class TestActOnClonedRepo:
         )
 
     def test_converts_generic_exception_to_hook_result(self, default_hooks):
-        """Test that a generic Exception raised during execution is converted to a hook result."""
+        """Test that a generic Exception raised during execution is converted
+        to a hook result.
+        """
         msg = "Some error message"
 
         def _raise_exception(*args, **kwargs):
@@ -232,38 +234,13 @@ class TestActOnClonedRepo:
             in result.msg
         )
 
-    def test_fail_repo_verbose(self):
+    @pytest.mark.parametrize(
+        "hooks",
+        [setup_hooks(verbose=True), setup_hooks(very_verbose=True)],
+        ids=["verbose", "very_verbose"],
+    )
+    def test_fail_repo_verbose(self, hooks):
         """Test verbose output on repo that fails tests."""
-        hooks = setup_hooks(verbose=True)
-
-        expected_verbose_msg = """1) isPrimeFalseForComposites(PrimeCheckerTest)
-java.lang.AssertionError: 
-Expected: is <false>
-     but: was <true>
-2) oneIsNotPrime(PrimeCheckerTest)
-java.lang.AssertionError: 
-Expected: is <false>
-     but: was <true>"""[
-            : _output.DEFAULT_MAX_LINES
-        ]  # noqa: W291
-
-        result = hooks.act_on_cloned_repo(FAIL_REPO)
-
-        assert (
-            _output.test_result_header(
-                "PrimeCheckerTest",
-                NUM_PRIME_CHECKER_TESTS,
-                NUM_PRIME_CHECKER_TESTS - 2,
-                _output.FAILURE_COLOR,
-            )
-            in result.msg
-        )
-        assert expected_verbose_msg in result.msg
-
-    def test_fail_repo_very_verbose(self):
-        """Test verbose output on repo that fails tests."""
-        hooks = setup_hooks(very_verbose=True)
-
         expected_verbose_msg = """1) isPrimeFalseForComposites(PrimeCheckerTest)
 java.lang.AssertionError: 
 Expected: is <false>
@@ -346,7 +323,47 @@ Expected: is <false>
         result = default_hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
 
         assert result.status == Status.ERROR
-        assert "error: illegal start of type" in result.msg
+        assert "Compile error" in result.msg
+        assert len(result.msg.split("\n")) == 1
+
+    def test_amount_of_lines_in_compile_error_is_truncated_in_verbose_mode(
+        self,
+    ):
+        hooks = setup_hooks(verbose=True)
+
+        result = hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
+
+        assert result.status == Status.ERROR
+        assert len(result.msg.split(os.linesep)) == _output.DEFAULT_MAX_LINES
+
+    def test_full_compile_error_shown_in_very_verbose_mode(self):
+        hooks = setup_hooks(very_verbose=True)
+        expected_error_msg_lines = """
+BadClass.java:2: error: illegal start of type
+    for (int i = 0; i < 10; i++, i--) {
+    ^
+BadClass.java:2: error: illegal start of type
+    for (int i = 0; i < 10; i++, i--) {
+                        ^
+BadClass.java:2: error: <identifier> expected
+    for (int i = 0; i < 10; i++, i--) {
+                             ^
+BadClass.java:2: error: <identifier> expected
+    for (int i = 0; i < 10; i++, i--) {
+                                  ^
+4 errors
+""".strip().split(
+            "\n"
+        )
+
+        result = hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
+
+        result_lines = result.msg.strip().split("\n")
+        assert result.status == Status.ERROR
+        # the absolute path to BadClass will differ depending on the test
+        # environment so asserting the following is about as good as it gets
+        assert len(result_lines) == len(expected_error_msg_lines)
+        assert result_lines[-1] == expected_error_msg_lines[-1]
 
     def test_runs_correctly_when_paths_include_whitespace(self, default_hooks):
         result = default_hooks.act_on_cloned_repo(DIR_PATHS_WITH_SPACES)
