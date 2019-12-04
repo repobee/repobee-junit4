@@ -26,3 +26,9 @@ _exception
 
 .. automodule:: repobee_junit4._exception
     :members:
+
+_output
+====================
+
+.. automodule:: repobee_junit4._output
+    :members:
