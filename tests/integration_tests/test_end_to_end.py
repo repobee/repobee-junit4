@@ -73,6 +73,7 @@ UNAUTHORIZED_NETWORK_ACCESS_REPO = (
 )
 BAD_TESTS_REPO = REPO_DIR / "student-with-bad-tests-week-10"
 DUPLICATE_TESTS_REPO = REPO_DIR / "student-with-duplicate-tests-week-10"
+ENDLESS_WHILE_LOOP = REPO_DIR / "endless-loop-week-10"
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -111,6 +112,7 @@ def setup_hooks(
     very_verbose=False,
     disable_security=False,
     run_student_tests=False,
+    timeout=10,
 ):
     """Return an instance of JUnit4Hooks with pre-configured arguments."""
     hooks = junit4.JUnit4Hooks()
@@ -124,6 +126,7 @@ def setup_hooks(
     hooks._very_verbose = very_verbose
     hooks._disable_security = disable_security
     hooks._run_student_tests = run_student_tests
+    hooks._timeout = timeout
     return hooks
 
 
@@ -485,6 +488,15 @@ BadClass.java:2: error: <identifier> expected
         # the first line can be somewhat longer due to staus message
         # and color codes
         assert any([len(line) > line_length for line in lines[1:]])
+
+    def test_endless_loop_in_production_code_times_out(self):
+        timeout = 1
+        hooks = setup_hooks(timeout=timeout)
+
+        result = hooks.act_on_cloned_repo(ENDLESS_WHILE_LOOP)
+
+        assert result.status == Status.WARNING
+        assert "Timed out after {} seconds".format(timeout) in result.msg
 
 
 class TestSecurityPolicy:

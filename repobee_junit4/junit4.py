@@ -345,6 +345,7 @@ class JUnit4Hooks(plug.Plugin):
                     prod_class,
                     classpath=classpath,
                     security_policy=security_policy,
+                    timeout=1,
                 )
                 results.append(test_result)
             return results

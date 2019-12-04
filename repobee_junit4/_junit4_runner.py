@@ -86,6 +86,7 @@ def run_test_class(
     test_class: pathlib.Path,
     prod_class: pathlib.Path,
     classpath: str,
+    timeout: int,
     security_policy: Optional[pathlib.Path] = None,
 ) -> _output.TestResult:
     """Run a single test class on a single production class.
@@ -94,8 +95,11 @@ def run_test_class(
         test_class: Path to a Java test class.
         prod_class: Path to a Java production class.
         classpath: A classpath to use in the tests.
+        timeout: Maximum amount of time the test class is allowed to run, in
+            seconds.
+        security_policy: A JVM security policy to apply during test execution.
     Returns:
-        The completed process.
+        Test results.
     """
     package = _extract_conforming_package(test_class, prod_class)
 
@@ -121,8 +125,15 @@ def run_test_class(
         test_class_name,
     ]
 
-    proc = subprocess.run(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-
-    return _output.TestResult(test_class=test_class, proc=proc)
+    try:
+        proc = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+        )
+        return _output.TestResult.build(test_class=test_class, proc=proc)
+    except subprocess.TimeoutExpired as exc:
+        return _output.TestResult.timed_out(
+            test_class=test_class, timeout=exc.timeout
+        )
