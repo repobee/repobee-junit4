@@ -74,6 +74,7 @@ to the end of the configuration file. Here's a sample configuration.
    junit_path = /absolute/path/to/junit-4.12.jar
    hamcrest_path = /absolute/path/to/hamcrest-core-1.3.jar
    reference_tests_dir = /absolute/path/to/reference_tests_dir
+   timeout = 5
 
 .. important::
 

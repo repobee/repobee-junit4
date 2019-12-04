@@ -69,6 +69,10 @@ command.
     - Long lines are truncated.
 * ``--junit4-very-verbose``
     - Same as ``--junit4-verbose``, but without truncation.
+* ``--junit4-timeout``
+    - The maximum amount of time a test class is allowed to run before timing
+      out. Defaults to a sane value.
+    - Can be specified in the config file with the ``timeout`` option.
 
 .. _use case:
 
