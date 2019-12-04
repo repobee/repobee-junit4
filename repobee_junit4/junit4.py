@@ -116,28 +116,34 @@ class JUnit4Hooks(plug.Plugin):
         """
         self._master_repo_names = args.master_repo_names
         self._reference_tests_dir = (
-            args.reference_tests_dir
-            if args.reference_tests_dir
+            args.junit4_reference_tests_dir
+            if args.junit4_reference_tests_dir
             else self._reference_tests_dir
         )
         self._ignore_tests = (
-            args.ignore_tests if args.ignore_tests else self._ignore_tests
+            args.junit4_ignore_tests
+            if args.junit4_ignore_tests
+            else self._ignore_tests
         )
         self._hamcrest_path = (
-            args.hamcrest_path if args.hamcrest_path else self._hamcrest_path
+            args.junit4_hamcrest_path
+            if args.junit4_hamcrest_path
+            else self._hamcrest_path
         )
         self._junit_path = (
-            args.junit_path if args.junit_path else self._junit_path
+            args.junit4_junit_path
+            if args.junit4_junit_path
+            else self._junit_path
         )
-        self._verbose = args.verbose
-        self._very_verbose = args.very_verbose
+        self._verbose = args.junit4_verbose
+        self._very_verbose = args.junit4_very_verbose
         self._disable_security = (
-            args.disable_security
-            if args.disable_security
+            args.junit4_disable_security
+            if args.junit4_disable_security
             else self._disable_security
         )
-        self._run_student_tests = args.run_student_tests
-        self._timeout = args.timeout
+        self._run_student_tests = args.junit4_run_student_tests
+        self._timeout = args.junit4_timeout
         # at this point, the jars must have been specified and exist
         self._check_jars_exist()
 
@@ -153,7 +159,7 @@ class JUnit4Hooks(plug.Plugin):
             "--junit4-reference-tests-dir",
             help="Path to a directory with reference tests.",
             type=str,
-            dest="reference_tests_dir",
+            dest="junit4_reference_tests_dir",
             required=not self._reference_tests_dir,
         )
 
@@ -161,7 +167,7 @@ class JUnit4Hooks(plug.Plugin):
             "--junit4-ignore-tests",
             help="Names of test classes to ignore.",
             type=str,
-            dest="ignore_tests",
+            dest="junit4_ignore_tests",
             nargs="+",
         )
 
@@ -171,7 +177,7 @@ class JUnit4Hooks(plug.Plugin):
                 _junit4_runner.HAMCREST_JAR
             ),
             type=str,
-            dest="hamcrest_path",
+            dest="junit4_hamcrest_path",
             # required if not picked up in config_hook nor on classpath
             required=not self._hamcrest_path
             and _junit4_runner.HAMCREST_JAR not in self._classpath,
@@ -183,7 +189,7 @@ class JUnit4Hooks(plug.Plugin):
                 _junit4_runner.JUNIT_JAR
             ),
             type=str,
-            dest="junit_path",
+            dest="junit4_junit_path",
             # required if not picked up in config_hook nor on classpath
             required=not self._junit_path
             and _junit4_runner.JUNIT_JAR not in self._classpath,
@@ -195,7 +201,7 @@ class JUnit4Hooks(plug.Plugin):
                 "Disable the default security policy (student code can do "
                 "whatever)."
             ),
-            dest="disable_security",
+            dest="junit4_disable_security",
             action="store_true",
         )
 
@@ -203,13 +209,13 @@ class JUnit4Hooks(plug.Plugin):
         verbosity.add_argument(
             "--junit4-verbose",
             help="Display more information about test failures.",
-            dest="verbose",
+            dest="junit4_verbose",
             action="store_true",
         )
         verbosity.add_argument(
             "--junit4-very-verbose",
             help="Display the full failure output, without truncating.",
-            dest="very_verbose",
+            dest="junit4_very_verbose",
             action="store_true",
         )
 
@@ -218,7 +224,7 @@ class JUnit4Hooks(plug.Plugin):
             help="Run test classes found in the student repos instead of "
             "those from the reference tests directory. Only tests that exist "
             "in the reference tests directory will be searched for.",
-            dest="run_student_tests",
+            dest="junit4_run_student_tests",
             action="store_true",
         )
 
@@ -226,7 +232,7 @@ class JUnit4Hooks(plug.Plugin):
             "--junit4-timeout",
             help="Maximum amount of seconds a test class is allowed to run "
             "before timing out.",
-            dest="timeout",
+            dest="junit4_timeout",
             type=int,
             default=self._timeout,
         )

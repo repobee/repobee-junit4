@@ -76,15 +76,15 @@ def setup_args(
     """Return an args namespace with the specified values."""
     return Namespace(
         master_repo_names=master_repo_names,
-        reference_tests_dir=reference_tests_dir,
-        ignore_tests=ignore_tests,
-        junit_path=junit_path,
-        hamcrest_path=hamcrest_path,
-        verbose=verbose,
-        very_verbose=very_verbose,
-        disable_security=disable_security,
-        run_student_tests=run_student_tests,
-        timeout=timeout,
+        junit4_reference_tests_dir=reference_tests_dir,
+        junit4_ignore_tests=ignore_tests,
+        junit4_junit_path=junit_path,
+        junit4_hamcrest_path=hamcrest_path,
+        junit4_verbose=verbose,
+        junit4_very_verbose=very_verbose,
+        junit4_disable_security=disable_security,
+        junit4_run_student_tests=run_student_tests,
+        junit4_timeout=timeout,
     )
 
 
@@ -103,15 +103,15 @@ def empty_args(
     """Return an args namespace where all args default to None."""
     return Namespace(
         master_repo_names=master_repo_names,
-        reference_tests_dir=reference_tests_dir,
-        ignore_tests=ignore_tests,
-        junit_path=junit_path,
-        hamcrest_path=hamcrest_path,
-        verbose=verbose,
-        very_verbose=very_verbose,
-        disable_security=disable_security,
-        run_student_tests=run_student_tests,
-        timeout=timeout,
+        junit4_reference_tests_dir=reference_tests_dir,
+        junit4_ignore_tests=ignore_tests,
+        junit4_junit_path=junit_path,
+        junit4_hamcrest_path=hamcrest_path,
+        junit4_verbose=verbose,
+        junit4_very_verbose=very_verbose,
+        junit4_disable_security=disable_security,
+        junit4_run_student_tests=run_student_tests,
+        junit4_timeout=timeout,
     )
 
 
@@ -333,15 +333,15 @@ class TestCloneParserHook:
 
         args = parser.parse_args(sys_args)
 
-        assert args.reference_tests_dir == RTD
-        assert args.ignore_tests == IGNORE_TESTS
-        assert args.hamcrest_path == HAMCREST_PATH
-        assert args.junit_path == JUNIT_PATH
-        assert args.verbose == (False if verbose is None else verbose)
-        assert args.very_verbose == (
+        assert args.junit4_reference_tests_dir == RTD
+        assert args.junit4_ignore_tests == IGNORE_TESTS
+        assert args.junit4_hamcrest_path == HAMCREST_PATH
+        assert args.junit4_junit_path == JUNIT_PATH
+        assert args.junit4_verbose == (False if verbose is None else verbose)
+        assert args.junit4_very_verbose == (
             False if very_verbose is None else very_verbose
         )
-        assert args.timeout == TIMEOUT
+        assert args.junit4_timeout == TIMEOUT
 
     def test_verbose_and_very_verbose_mutually_exclusive(self, junit4_hooks):
         """Test that verbose and very_verbose can't both be true at the same
