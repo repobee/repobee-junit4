@@ -175,7 +175,10 @@ def format_results(test_results, compile_failed, verbose, very_verbose):
         num_failed = sum([res.num_failed for res in test_results])
         total = num_passed + num_failed
         msg = (
-            "Passed {}/{} tests{}".format(num_passed, total, os.linesep) + msg
+            "Test summary: Passed {}/{} of all executed tests tests{}".format(
+                num_passed, total, os.linesep
+            )
+            + msg
         )
     return msg
 
