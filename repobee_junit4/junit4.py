@@ -38,6 +38,8 @@ LOGGER = daiquiri.getLogger(__file__)
 
 ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
+DEFAULT_TIMEOUT = 10
+
 
 class JUnit4Hooks(plug.Plugin):
     def __init__(self):
@@ -51,6 +53,7 @@ class JUnit4Hooks(plug.Plugin):
         self._very_verbose = False
         self._disable_security = False
         self._run_student_tests = False
+        self._timeout = DEFAULT_TIMEOUT
 
     def act_on_cloned_repo(
         self, path: Union[str, pathlib.Path]
@@ -134,7 +137,7 @@ class JUnit4Hooks(plug.Plugin):
             else self._disable_security
         )
         self._run_student_tests = args.run_student_tests
-
+        self._timeout = args.timeout
         # at this point, the jars must have been specified and exist
         self._check_jars_exist()
 
@@ -219,12 +222,23 @@ class JUnit4Hooks(plug.Plugin):
             action="store_true",
         )
 
+        clone_parser.add_argument(
+            "--junit4-timeout",
+            help="Maximum amount of seconds a test class is allowed to run "
+            "before timing out.",
+            dest="timeout",
+            type=int,
+            default=self._timeout,
+        )
+
     def config_hook(self, config_parser: configparser.ConfigParser) -> None:
         """Look for hamcrest and junit paths in the config, and get the classpath.
 
         Args:
             config: the config parser after config has been read.
         """
+        if SECTION not in config_parser:
+            return
         self._hamcrest_path = config_parser.get(
             SECTION, "hamcrest_path", fallback=self._hamcrest_path
         )
@@ -233,6 +247,17 @@ class JUnit4Hooks(plug.Plugin):
         )
         self._reference_tests_dir = config_parser.get(
             SECTION, "reference_tests_dir", fallback=self._reference_tests_dir
+        )
+        if "timeout" in config_parser[SECTION]:
+            timeout = config_parser.get(SECTION, "timeout")
+            if not timeout.isnumeric():
+                raise plug.PlugError(
+                    "config value timeout in section [{}] must be an integer, but was: {}".format(
+                        SECTION, timeout
+                    )
+                )
+        self._timeout = int(
+            config_parser.get(SECTION, "timeout", fallback=str(self._timeout))
         )
 
     def _compile_all(
@@ -345,7 +370,7 @@ class JUnit4Hooks(plug.Plugin):
                     prod_class,
                     classpath=classpath,
                     security_policy=security_policy,
-                    timeout=1,
+                    timeout=self._timeout,
                 )
                 results.append(test_result)
             return results

@@ -17,6 +17,7 @@ import os
 from configparser import ConfigParser
 from collections import namedtuple
 from argparse import ArgumentParser
+from argparse import Namespace
 
 import pytest
 
@@ -25,23 +26,6 @@ from repobee_junit4 import junit4
 from repobee_junit4 import _junit4_runner
 
 import envvars
-
-# args that are relevant for junit4
-Args = namedtuple(
-    "Args",
-    (
-        "master_repo_names",
-        "reference_tests_dir",
-        "ignore_tests",
-        "hamcrest_path",
-        "junit_path",
-        "verbose",
-        "very_verbose",
-        "disable_security",
-        "run_student_tests",
-    ),
-)
-Args.__new__.__defaults__ = (None,) * len(Args._fields)
 
 CUR_DIR = pathlib.Path(__file__).parent
 REPO_DIR = CUR_DIR / "repos"
@@ -56,7 +40,6 @@ MASTER_REPO_NAMES = (
     "multiple-packages",
 )
 
-
 # default values for CLI args
 JUNIT_PATH = str(envvars.JUNIT_PATH)
 HAMCREST_PATH = str(envvars.HAMCREST_PATH)
@@ -68,6 +51,7 @@ VERBOSE = False
 VERY_VERBOSE = False
 DISABLE_SECURITY = False
 RUN_STUDENT_TESTS = False
+TIMEOUT = 20
 
 CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
 
@@ -87,9 +71,10 @@ def setup_args(
     very_verbose=VERY_VERBOSE,
     disable_security=DISABLE_SECURITY,
     run_student_tests=RUN_STUDENT_TESTS,
+    timeout=TIMEOUT,
 ):
-    """Return an Args instance with the specified values."""
-    return Args(
+    """Return an args namespace with the specified values."""
+    return Namespace(
         master_repo_names=master_repo_names,
         reference_tests_dir=reference_tests_dir,
         ignore_tests=ignore_tests,
@@ -99,6 +84,34 @@ def setup_args(
         very_verbose=very_verbose,
         disable_security=disable_security,
         run_student_tests=run_student_tests,
+        timeout=timeout,
+    )
+
+
+def empty_args(
+    master_repo_names=None,
+    reference_tests_dir=None,
+    ignore_tests=None,
+    hamcrest_path=None,
+    junit_path=None,
+    verbose=None,
+    very_verbose=None,
+    disable_security=None,
+    run_student_tests=None,
+    timeout=None,
+):
+    """Return an args namespace where all args default to None."""
+    return Namespace(
+        master_repo_names=master_repo_names,
+        reference_tests_dir=reference_tests_dir,
+        ignore_tests=ignore_tests,
+        junit_path=junit_path,
+        hamcrest_path=hamcrest_path,
+        verbose=verbose,
+        very_verbose=very_verbose,
+        disable_security=disable_security,
+        run_student_tests=run_student_tests,
+        timeout=timeout,
     )
 
 
@@ -115,6 +128,7 @@ def full_config_parser():
         hamcrest_path=HAMCREST_PATH,
         junit_path=JUNIT_PATH,
         reference_tests_dir=RTD,
+        timeout=str(TIMEOUT),
     )
     return parser
 
@@ -156,6 +170,7 @@ class TestParseArgs:
         assert junit4_hooks._very_verbose == VERY_VERBOSE
         assert junit4_hooks._disable_security == DISABLE_SECURITY
         assert junit4_hooks._run_student_tests == RUN_STUDENT_TESTS
+        assert junit4_hooks._timeout == TIMEOUT
 
     def test_defaults_are_overwritten(self, junit4_hooks, full_args):
         """Test that ignore_tests, hamcrest_path and junit_path are all
@@ -166,6 +181,7 @@ class TestParseArgs:
         junit4_hooks._hamcrest_path = "wrong/path"
         junit4_hooks._junit_path = "also/wrong/path"
         junit4_hooks._reference_tests_dir = "some/cray/dir"
+        junit4_hooks._timeout = 9999
 
         junit4_hooks.parse_args(full_args)
 
@@ -173,14 +189,16 @@ class TestParseArgs:
         assert junit4_hooks._hamcrest_path == HAMCREST_PATH
         assert junit4_hooks._junit_path == JUNIT_PATH
         assert junit4_hooks._reference_tests_dir == RTD
+        assert junit4_hooks._timeout == TIMEOUT
 
     def test_defaults_are_kept_if_not_specified_in_args(
         self, junit4_hooks, full_args
     ):
         """Test that defaults are not overwritten if they are falsy in the
-        args.
+        args. This does not test the timout attribute as that has a hard-coded
+        default.
         """
-        args = Args(master_repo_names=MASTER_REPO_NAMES)
+        args = empty_args(master_repo_names=MASTER_REPO_NAMES)
         expected_ignore_tests = ["some", "tests"]
         expected_hamcrest_path = HAMCREST_PATH
         expected_junit_path = JUNIT_PATH
@@ -206,7 +224,7 @@ class TestParseArgs:
         argument does not exist.
         """
         junit_path = "/no/jar/here/" + _junit4_runner.JUNIT_JAR
-        args = Args(junit_path=junit_path, hamcrest_path=HAMCREST_PATH)
+        args = empty_args(junit_path=junit_path, hamcrest_path=HAMCREST_PATH)
 
         with pytest.raises(plug.PlugError) as exc_info:
             junit4_hooks.parse_args(args)
@@ -224,7 +242,7 @@ class TestParseArgs:
         junit_path = "/no/jar/here/either/" + _junit4_runner.JUNIT_JAR
         junit4_hooks._junit_path = junit_path
         junit4_hooks._hamcrest_path = HAMCREST_PATH
-        args = Args()
+        args = empty_args()
 
         with pytest.raises(plug.PlugError) as exc_info:
             junit4_hooks.parse_args(args)
@@ -240,7 +258,7 @@ class TestParseArgs:
         junit4_hooks._classpath = os.pathsep.join(
             ["/garbage/path/", junit_path, HAMCREST_PATH]
         )
-        args = Args()
+        args = empty_args()
 
         with pytest.raises(plug.PlugError) as exc_info:
             junit4_hooks.parse_args(args)
@@ -257,6 +275,7 @@ class TestConfigHook:
         assert junit4_hooks._hamcrest_path == HAMCREST_PATH
         assert junit4_hooks._junit_path == JUNIT_PATH
         assert junit4_hooks._classpath == CLASSPATH
+        assert junit4_hooks._timeout == TIMEOUT
 
     def test_with_empty_config(self, getenv_with_classpath, junit4_hooks):
         expected_junit = junit4_hooks._junit_path
@@ -269,6 +288,21 @@ class TestConfigHook:
         assert junit4_hooks._hamcrest_path == expected_hamcrest
         assert junit4_hooks._junit_path == expected_junit
         assert junit4_hooks._classpath == CLASSPATH
+
+    def test_raises_on_non_integer_timeout(
+        self, getenv_with_classpath, junit4_hooks, full_config_parser
+    ):
+        val = "hello"
+        full_config_parser[junit4.SECTION]["timeout"] = val
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            junit4_hooks.config_hook(full_config_parser)
+
+        assert "config value timeout in section [{}] must be an integer, but was: {}".format(
+            junit4.SECTION, val
+        ) in str(
+            exc_info.value
+        )
 
 
 class TestCloneParserHook:
@@ -286,6 +320,8 @@ class TestCloneParserHook:
             HAMCREST_PATH,
             "--junit4-junit-path",
             JUNIT_PATH,
+            "--junit4-timeout",
+            str(TIMEOUT),
         ]
 
         if verbose:
@@ -305,6 +341,7 @@ class TestCloneParserHook:
         assert args.very_verbose == (
             False if very_verbose is None else very_verbose
         )
+        assert args.timeout == TIMEOUT
 
     def test_verbose_and_very_verbose_mutually_exclusive(self, junit4_hooks):
         """Test that verbose and very_verbose can't both be true at the same
