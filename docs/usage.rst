@@ -34,7 +34,7 @@ command.
 * ``--junit4-reference-tests-dir``
     - Path to the RTD.
     - Can be specified in the configuration file with the
-      ``reference_test_dir`` option.
+      ``reference_tests_dir`` option.
     - **Required** unless specified in the configuration file.
 * ``--junit4-junit-path``
     - Path to the ``junit-4.12.jar`` library.
