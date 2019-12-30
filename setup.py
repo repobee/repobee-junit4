@@ -18,7 +18,7 @@ test_requirements = [
     "pytest-mock",
     "codecov",
 ]
-required = ["repobee-plug>=0.9.0", "daiquiri", "colored"]
+required = ["repobee-plug>=0.12.0", "daiquiri", "colored"]
 
 setup(
     name="repobee-junit4",

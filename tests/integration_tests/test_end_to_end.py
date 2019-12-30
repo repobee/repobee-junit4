@@ -20,8 +20,7 @@ from functools import partial
 
 import pytest
 
-from repobee_plug import Status
-from repobee_plug import exception
+import repobee_plug as plug
 from repobee_junit4 import junit4
 from repobee_junit4 import _output
 
@@ -145,17 +144,17 @@ class TestActOnClonedRepo:
     def test_runs_student_tests_correctly(self):
         hooks = setup_hooks(run_student_tests=True, verbose=True)
 
-        result = hooks.act_on_cloned_repo(BAD_TESTS_REPO)
+        result = hooks._act(BAD_TESTS_REPO, api=None)
 
-        assert result.status == Status.WARNING
+        assert result.status == plug.Status.WARNING
         assert "Student wrote a bad test" in str(result.msg)
 
     def test_handles_duplicate_student_tests(self):
         hooks = setup_hooks(run_student_tests=True, verbose=True)
 
-        result = hooks.act_on_cloned_repo(DUPLICATE_TESTS_REPO)
+        result = hooks._act(DUPLICATE_TESTS_REPO, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert (
             "Duplicates of the following test classes found in student "
             "repo: FiboTest.java" in str(result.msg)
@@ -164,9 +163,9 @@ class TestActOnClonedRepo:
     def test_handles_missing_student_tests(self):
         hooks = setup_hooks(run_student_tests=True, verbose=True)
 
-        result = hooks.act_on_cloned_repo(SUCCESS_REPO)
+        result = hooks._act(SUCCESS_REPO, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert (
             "Missing the following test classes in student repo: FiboTest.java"
             in str(result.msg)
@@ -185,18 +184,18 @@ class TestActOnClonedRepo:
             "repobee_junit4.junit4.JUnit4Hooks._compile_all",
             side_effect=_raise_exception,
         ):
-            result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
+            result = default_hooks._act(SUCCESS_REPO, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert result.msg == msg
 
     def test_with_abstract_test_class(self, default_hooks):
         """Test running the plugin when the reference tests include an abstract
         test class.
         """
-        result = default_hooks.act_on_cloned_repo(ABSTRACT_TEST_REPO)
+        result = default_hooks._act(ABSTRACT_TEST_REPO, api=None)
 
-        assert result.status == Status.SUCCESS
+        assert result.status == plug.Status.SUCCESS
         assert (
             _output.test_result_header(
                 "PrimeCheckerTest",
@@ -209,9 +208,9 @@ class TestActOnClonedRepo:
 
     def test_correct_repo(self, default_hooks):
         """Test with repo that should not have test failures."""
-        result = default_hooks.act_on_cloned_repo(SUCCESS_REPO)
+        result = default_hooks._act(SUCCESS_REPO, api=None)
 
-        assert result.status == Status.SUCCESS
+        assert result.status == plug.Status.SUCCESS
         assert (
             _output.test_result_header(
                 "FiboTest",
@@ -224,9 +223,9 @@ class TestActOnClonedRepo:
 
     def test_fail_repo(self, default_hooks):
         """Test with repo that should have test failures."""
-        result = default_hooks.act_on_cloned_repo(FAIL_REPO)
+        result = default_hooks._act(FAIL_REPO, api=None)
 
-        assert result.status == Status.WARNING
+        assert result.status == plug.Status.WARNING
         assert (
             _output.test_result_header(
                 "PrimeCheckerTest",
@@ -253,7 +252,7 @@ java.lang.AssertionError:
 Expected: is <false>
      but: was <true>"""  # noqa: W291
 
-        result = hooks.act_on_cloned_repo(FAIL_REPO)
+        result = hooks._act(FAIL_REPO, api=None)
 
         assert (
             _output.test_result_header(
@@ -270,9 +269,9 @@ Expected: is <false>
         """Test that a warning is returned when the reference test directory
         has no corresponding subdirectory for the specified repo.
         """
-        result = default_hooks.act_on_cloned_repo(NO_TEST_DIR_REPO)
+        result = default_hooks._act(NO_TEST_DIR_REPO, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert "no reference test directory for" in result.msg
 
     def test_no_tests_for_repo(self, default_hooks):
@@ -280,9 +279,9 @@ Expected: is <false>
         has a corresponeding subdirectory for the repo, but there are no
         test files in it.
         """
-        result = default_hooks.act_on_cloned_repo(NO_TESTS_REPO)
+        result = default_hooks._act(NO_TESTS_REPO, api=None)
 
-        assert result.status == Status.WARNING
+        assert result.status == plug.Status.WARNING
         assert "no files ending in `Test.java` found" in result.msg
 
     def test_error_result_when_no_master_repo_match(self, default_hooks):
@@ -290,9 +289,9 @@ Expected: is <false>
         has no corresponding master repo (i.e. there is no master repo name
         contained in the student repo name).
         """
-        result = default_hooks.act_on_cloned_repo(NO_MASTER_MATCH_REPO)
+        result = default_hooks._act(NO_MASTER_MATCH_REPO, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert "no master repo name matching" in result.msg
 
     def test_error_result_when_path_does_not_exist(self, default_hooks):
@@ -300,9 +299,9 @@ Expected: is <false>
             pass
         # dir is now deleted
 
-        result = default_hooks.act_on_cloned_repo(dirname)
+        result = default_hooks._act(dirname, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert "student repo {} does not exist".format(dirname) in result.msg
 
     def test_error_result_when_prod_class_missing(self, default_hooks):
@@ -317,15 +316,15 @@ Expected: is <false>
             target = str(pathlib.Path(tmpdir) / "student-week-11")
             shutil.copytree(str(SUCCESS_REPO), target)
 
-            result = default_hooks.act_on_cloned_repo(target)
+            result = default_hooks._act(target, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert "no production class found for PrimeCheckerTest" in result.msg
 
     def test_error_result_on_compile_error(self, default_hooks):
-        result = default_hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
+        result = default_hooks._act(str(COMPILE_ERROR_REPO), api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert "Compile error" in result.msg
         assert len(result.msg.split("\n")) == 1
 
@@ -334,9 +333,9 @@ Expected: is <false>
     ):
         hooks = setup_hooks(verbose=True)
 
-        result = hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
+        result = hooks._act(str(COMPILE_ERROR_REPO), api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
         assert len(result.msg.split(os.linesep)) == _output.DEFAULT_MAX_LINES
 
     def test_full_compile_error_shown_in_very_verbose_mode(self):
@@ -359,25 +358,26 @@ BadClass.java:2: error: <identifier> expected
             "\n"
         )
 
-        result = hooks.act_on_cloned_repo(str(COMPILE_ERROR_REPO))
+        result = hooks._act(COMPILE_ERROR_REPO, api=None)
 
         result_lines = result.msg.strip().split("\n")
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
+        print(result_lines)
         # the absolute path to BadClass will differ depending on the test
         # environment so asserting the following is about as good as it gets
         assert len(result_lines) == len(expected_error_msg_lines)
         assert result_lines[-1] == expected_error_msg_lines[-1]
 
     def test_runs_correctly_when_paths_include_whitespace(self, default_hooks):
-        result = default_hooks.act_on_cloned_repo(DIR_PATHS_WITH_SPACES)
+        result = default_hooks._act(DIR_PATHS_WITH_SPACES, api=None)
 
-        assert result.status == Status.SUCCESS
+        assert result.status == plug.Status.SUCCESS
 
     def test_runs_with_packaged_code(self, default_hooks):
         """Test that packaged code is handled correctly."""
-        result = default_hooks.act_on_cloned_repo(PACKAGED_CODE_REPO)
+        result = default_hooks._act(PACKAGED_CODE_REPO, api=None)
 
-        assert result.status == Status.SUCCESS
+        assert result.status == plug.Status.SUCCESS
         assert (
             _output.test_result_header(
                 "se.repobee.fibo.FiboTest",
@@ -395,25 +395,25 @@ BadClass.java:2: error: <identifier> expected
         directory structure in the student repo does not correspond to the
         package statement in the test class.
         """
-        result = default_hooks.act_on_cloned_repo(NO_DIR_STRUCTURE_REPO)
+        result = default_hooks._act(NO_DIR_STRUCTURE_REPO, api=None)
 
-        assert result.status == Status.ERROR
+        assert result.status == plug.Status.ERROR
 
     def test_runs_with_multiple_packages(self, default_hooks):
         """Test that a reference test suite with several packages is run
         correctly.
         """
-        result = default_hooks.act_on_cloned_repo(MULTIPLE_PACKAGES_REPO)
+        result = default_hooks._act(MULTIPLE_PACKAGES_REPO, api=None)
 
-        assert result.status == Status.SUCCESS
+        assert result.status == plug.Status.SUCCESS
 
     def test_raises_when_rtd_does_not_exist(self):
         with tempfile.TemporaryDirectory() as deleted_dir:
             pass
         hooks = setup_hooks(reference_tests_dir=str(deleted_dir))
 
-        with pytest.raises(exception.PlugError) as exc_info:
-            hooks.act_on_cloned_repo(SUCCESS_REPO)
+        with pytest.raises(plug.PlugError) as exc_info:
+            hooks._act(SUCCESS_REPO, api=None)
 
         assert "{} is not a directory".format(str(deleted_dir)) in str(
             exc_info.value
@@ -424,8 +424,8 @@ BadClass.java:2: error: <identifier> expected
         with tempfile.NamedTemporaryFile() as tmpfile:
             hooks = setup_hooks(reference_tests_dir=str(tmpfile))
 
-            with pytest.raises(exception.PlugError) as exc_info:
-                hooks.act_on_cloned_repo(SUCCESS_REPO)
+            with pytest.raises(plug.PlugError) as exc_info:
+                hooks._act(SUCCESS_REPO, api=None)
 
         assert "{} is not a directory".format(str(tmpfile)) in str(
             exc_info.value
@@ -449,9 +449,9 @@ BadClass.java:2: error: <identifier> expected
             hamcrest_path="", junit_path="", classpath=classpath
         )
 
-        result = hooks.act_on_cloned_repo(SUCCESS_REPO)
+        result = hooks._act(SUCCESS_REPO, api=None)
 
-        assert result.status == Status.SUCCESS
+        assert result.status == plug.Status.SUCCESS
 
     def test_verbose_output_is_truncated(self, monkeypatch):
         """Test that long lines are truncated when running --verbose."""
@@ -462,7 +462,7 @@ BadClass.java:2: error: <identifier> expected
             partial(_output._truncate_lines, max_len=line_length),
         )
 
-        result = hooks.act_on_cloned_repo(FAIL_REPO)
+        result = hooks._act(FAIL_REPO, api=None)
 
         lines = result.msg.split(os.linesep)[1:]  # skip summary line
         assert len(lines) > 1
@@ -481,7 +481,7 @@ BadClass.java:2: error: <identifier> expected
             partial(_output._truncate_lines, max_len=line_length),
         )
 
-        result = hooks.act_on_cloned_repo(FAIL_REPO)
+        result = hooks._act(FAIL_REPO, api=None)
 
         lines = result.msg.split(os.linesep)
         assert len(lines) > 1
@@ -493,9 +493,9 @@ BadClass.java:2: error: <identifier> expected
         timeout = 1
         hooks = setup_hooks(timeout=timeout)
 
-        result = hooks.act_on_cloned_repo(ENDLESS_WHILE_LOOP)
+        result = hooks._act(ENDLESS_WHILE_LOOP, api=None)
 
-        assert result.status == Status.WARNING
+        assert result.status == plug.Status.WARNING
         assert "Timed out after {} seconds".format(timeout) in result.msg
 
 
@@ -510,9 +510,9 @@ class TestSecurityPolicy:
         """
         hooks = setup_hooks(verbose=True)
 
-        result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
+        result = hooks._act(UNAUTHORIZED_READ_FILE_REPO, api=None)
 
-        assert result.status == Status.WARNING
+        assert result.status == plug.Status.WARNING
         assert (
             "java.security.AccessControlException: access denied" in result.msg
         )
@@ -521,9 +521,9 @@ class TestSecurityPolicy:
         """Test that the default security policy blocks network access."""
         hooks = setup_hooks(verbose=True)
 
-        result = hooks.act_on_cloned_repo(UNAUTHORIZED_NETWORK_ACCESS_REPO)
+        result = hooks._act(UNAUTHORIZED_NETWORK_ACCESS_REPO, api=None)
 
-        assert result.status == Status.WARNING
+        assert result.status == plug.Status.WARNING
         assert (
             "java.security.AccessControlException: access denied" in result.msg
         )
@@ -534,9 +534,9 @@ class TestSecurityPolicy:
         """
         hooks = setup_hooks(disable_security=True)
 
-        result = hooks.act_on_cloned_repo(UNAUTHORIZED_READ_FILE_REPO)
+        result = hooks._act(UNAUTHORIZED_READ_FILE_REPO, api=None)
 
-        assert result.status == Status.SUCCESS
+        assert result.status == plug.Status.SUCCESS
         assert (
             _output.test_result_header(
                 "FiboTest",

@@ -15,7 +15,6 @@
 import pathlib
 import os
 from configparser import ConfigParser
-from collections import namedtuple
 from argparse import ArgumentParser
 from argparse import Namespace
 
@@ -159,7 +158,7 @@ class TestParseArgs:
         """Test that args-related attributes are correctly set when all of them
         are in the args namespace.
         """
-        junit4_hooks.parse_args(full_args)
+        junit4_hooks._handle_args(full_args)
 
         assert junit4_hooks._master_repo_names == MASTER_REPO_NAMES
         assert junit4_hooks._reference_tests_dir == RTD
@@ -183,7 +182,7 @@ class TestParseArgs:
         junit4_hooks._reference_tests_dir = "some/cray/dir"
         junit4_hooks._timeout = 9999
 
-        junit4_hooks.parse_args(full_args)
+        junit4_hooks._handle_args(full_args)
 
         assert junit4_hooks._ignore_tests == IGNORE_TESTS
         assert junit4_hooks._hamcrest_path == HAMCREST_PATH
@@ -211,7 +210,7 @@ class TestParseArgs:
         junit4_hooks._reference_tests_dir = expected_rtd
         junit4_hooks._disable_security = expected_disable_security
 
-        junit4_hooks.parse_args(args)
+        junit4_hooks._handle_args(args)
 
         assert junit4_hooks._ignore_tests == expected_ignore_tests
         assert junit4_hooks._hamcrest_path == expected_hamcrest_path
@@ -227,7 +226,7 @@ class TestParseArgs:
         args = empty_args(junit_path=junit_path, hamcrest_path=HAMCREST_PATH)
 
         with pytest.raises(plug.PlugError) as exc_info:
-            junit4_hooks.parse_args(args)
+            junit4_hooks._handle_args(args)
 
         assert "{} is not a file".format(junit_path) in str(exc_info.value)
 
@@ -245,7 +244,7 @@ class TestParseArgs:
         args = empty_args()
 
         with pytest.raises(plug.PlugError) as exc_info:
-            junit4_hooks.parse_args(args)
+            junit4_hooks._handle_args(args)
 
         assert "{} is not a file".format(junit_path) in str(exc_info.value)
 
@@ -261,7 +260,7 @@ class TestParseArgs:
         args = empty_args()
 
         with pytest.raises(plug.PlugError) as exc_info:
-            junit4_hooks.parse_args(args)
+            junit4_hooks._handle_args(args)
 
         assert "{} is not a file".format(junit_path) in str(exc_info.value)
 
@@ -298,11 +297,10 @@ class TestConfigHook:
         with pytest.raises(plug.PlugError) as exc_info:
             junit4_hooks.config_hook(full_config_parser)
 
-        assert "config value timeout in section [{}] must be an integer, but was: {}".format(
-            junit4.SECTION, val
-        ) in str(
-            exc_info.value
-        )
+        assert (
+            "config value timeout in section [{}] must be an integer"
+            ", but was: {}"
+        ).format(junit4.SECTION, val) in str(exc_info.value)
 
 
 class TestCloneParserHook:
@@ -329,7 +327,7 @@ class TestCloneParserHook:
         if very_verbose:
             sys_args += ["--junit4-very-verbose"]
 
-        junit4_hooks.clone_parser_hook(parser)
+        junit4_hooks._add_option(parser)
 
         args = parser.parse_args(sys_args)
 
@@ -359,7 +357,7 @@ class TestCloneParserHook:
             "--junit4-very-verbose",
         ]
 
-        junit4_hooks.clone_parser_hook(parser)
+        junit4_hooks._add_option(parser)
 
         with pytest.raises(SystemExit):
             parser.parse_args(sys_args)
@@ -379,7 +377,7 @@ class TestCloneParserHook:
         if skip_arg != "rtd":
             sys_args.extend(["--junit4-refernce-tests-dir", RTD])
 
-        junit4_hooks.clone_parser_hook(parser)
+        junit4_hooks._add_option(parser)
 
         with pytest.raises(SystemExit):
             parser.parse_args(sys_args)
@@ -405,7 +403,7 @@ class TestCloneParserHook:
         hooks.config_hook(config_parser)
 
         # this is the actual test
-        hooks.clone_parser_hook(arg_parser)
+        hooks._add_option(arg_parser)
         arg_parser.parse_args(sys_args)  # should not crash!
 
     def test_args_not_required_if_in_config(
@@ -416,7 +414,7 @@ class TestCloneParserHook:
         """
         junit4_hooks.config_hook(full_config_parser)
         parser = ArgumentParser()
-        junit4_hooks.clone_parser_hook(parser)
+        junit4_hooks._add_option(parser)
 
         parser.parse_args([])  # should not crash
 

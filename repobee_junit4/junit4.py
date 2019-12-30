@@ -20,13 +20,12 @@ import os
 import argparse
 import configparser
 import pathlib
-from typing import Union, Tuple, List
+from typing import Tuple, List
 
 
 import daiquiri
 
 import repobee_plug as plug
-from repobee_plug import Status
 
 from repobee_junit4 import _java
 from repobee_junit4 import _junit4_runner
@@ -55,9 +54,20 @@ class JUnit4Hooks(plug.Plugin):
         self._run_student_tests = False
         self._timeout = DEFAULT_TIMEOUT
 
-    def act_on_cloned_repo(
-        self, path: Union[str, pathlib.Path]
-    ) -> plug.HookResult:
+    def clone_task(self) -> plug.Task:
+        return self._get_task()
+
+    def setup_task(self) -> plug.Task:
+        return self._get_task()
+
+    def _get_task(self) -> plug.Task:
+        return plug.Task(
+            act=self._act,
+            handle_args=self._handle_args,
+            add_option=self._add_option,
+        )
+
+    def _act(self, path: pathlib.Path, api: plug.API) -> plug.HookResult:
         """Look for production classes in the student repo corresponding to
         test classes in the reference tests directory.
 
@@ -71,7 +81,7 @@ class JUnit4Hooks(plug.Plugin):
             a plug.HookResult specifying the outcome.
         """
         if not pathlib.Path(self._reference_tests_dir).is_dir():
-            raise plug.exception.PlugError(
+            raise plug.PlugError(
                 "{} is not a directory".format(self._reference_tests_dir)
             )
         assert self._master_repo_names
@@ -81,7 +91,7 @@ class JUnit4Hooks(plug.Plugin):
             if not path.exists():
                 return plug.HookResult(
                     SECTION,
-                    Status.ERROR,
+                    plug.Status.ERROR,
                     "student repo {!s} does not exist".format(path),
                 )
 
@@ -97,17 +107,21 @@ class JUnit4Hooks(plug.Plugin):
             )
 
             status = (
-                Status.ERROR
+                plug.Status.ERROR
                 if compile_failed
-                else (Status.WARNING if has_failures else Status.SUCCESS)
+                else (
+                    plug.Status.WARNING
+                    if has_failures
+                    else plug.Status.SUCCESS
+                )
             )
             return plug.HookResult(SECTION, status, msg)
         except _exception.ActError as exc:
             return exc.hook_result
         except Exception as exc:
-            return plug.HookResult(SECTION, Status.ERROR, str(exc))
+            return plug.HookResult(SECTION, plug.Status.ERROR, str(exc))
 
-    def parse_args(self, args: argparse.Namespace) -> None:
+    def _handle_args(self, args: argparse.Namespace) -> None:
         """Get command line arguments.
 
         Args:
@@ -147,9 +161,7 @@ class JUnit4Hooks(plug.Plugin):
         # at this point, the jars must have been specified and exist
         self._check_jars_exist()
 
-    def clone_parser_hook(
-        self, clone_parser: configparser.ConfigParser
-    ) -> None:
+    def _add_option(self, clone_parser: configparser.ConfigParser) -> None:
         """Add reference_tests_dir argument to parser.
 
         Args:
@@ -258,9 +270,8 @@ class JUnit4Hooks(plug.Plugin):
             timeout = config_parser.get(SECTION, "timeout")
             if not timeout.isnumeric():
                 raise plug.PlugError(
-                    "config value timeout in section [{}] must be an integer, but was: {}".format(
-                        SECTION, timeout
-                    )
+                    "config value timeout in section [{}] must be an integer"
+                    ", but was: {}".format(SECTION, timeout)
                 )
         self._timeout = int(
             config_parser.get(SECTION, "timeout", fallback=str(self._timeout))
@@ -310,7 +321,7 @@ class JUnit4Hooks(plug.Plugin):
                     ", ".join(matches)
                 )
             )
-            res = plug.HookResult(SECTION, Status.ERROR, msg)
+            res = plug.HookResult(SECTION, plug.Status.ERROR, msg)
             raise _exception.ActError(res)
 
     def _find_test_classes(self, master_name) -> List[pathlib.Path]:
@@ -327,7 +338,7 @@ class JUnit4Hooks(plug.Plugin):
         if not test_dir.is_dir():
             res = plug.HookResult(
                 SECTION,
-                Status.ERROR,
+                plug.Status.ERROR,
                 "no reference test directory for {} in {}".format(
                     master_name, self._reference_tests_dir
                 ),
@@ -344,7 +355,7 @@ class JUnit4Hooks(plug.Plugin):
         if not test_classes:
             res = plug.HookResult(
                 SECTION,
-                Status.WARNING,
+                plug.Status.WARNING,
                 "no files ending in `Test.java` found in {!s}".format(
                     test_dir
                 ),
