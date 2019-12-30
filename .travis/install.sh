@@ -8,6 +8,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     pip install pip --upgrade
 fi
 
+java -version
 pip install -e ".[TEST]"
 
 curl https://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar -o junit-4.12.jar
