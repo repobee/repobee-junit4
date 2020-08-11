@@ -17,8 +17,6 @@ discovered in student repositories. See the README for more details.
 .. moduleauthor:: Simon Larsén
 """
 import os
-import argparse
-import configparser
 import pathlib
 from typing import Tuple, List
 
@@ -112,25 +110,14 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             a plug.Result specifying the outcome.
         """
 
-        self._master_repo_names = self.args.master_repo_names
-        self._reference_tests_dir = self.junit4_reference_tests_dir
-        self._ignore_tests = self.junit4_ignore_tests or []
-        self._hamcrest_path = self.junit4_hamcrest_path
-        self._junit_path = self.junit4_junit_path
-        self._verbose = self.junit4_verbose
-        self._very_verbose = self.junit4_very_verbose
-        self._disable_security = self.junit4_disable_security
-        self._run_student_tests = self.junit4_run_student_tests
-        self._timeout = self.junit4_timeout
-
         self._check_jars_exist()
 
-        if not pathlib.Path(self._reference_tests_dir).is_dir():
+        if not pathlib.Path(self.junit4_reference_tests_dir).is_dir():
             raise plug.PlugError(
-                "{} is not a directory".format(self._reference_tests_dir)
+                "{} is not a directory".format(self.junit4_reference_tests_dir)
             )
-        assert self._master_repo_names
-        assert self._reference_tests_dir
+        assert self.args.master_repo_names
+        assert self.junit4_reference_tests_dir
         try:
             path = pathlib.Path(path)
             if not path.exists():
@@ -148,7 +135,10 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             )
 
             msg = _output.format_results(
-                test_results, compile_failed, self._verbose, self._very_verbose
+                test_results,
+                compile_failed,
+                self.junit4_verbose,
+                self.junit4_very_verbose,
             )
 
             status = (
@@ -180,7 +170,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         reference_test_classes = self._find_test_classes(master_name)
         test_classes = (
             _java.get_student_test_classes(path, reference_test_classes)
-            if self._run_student_tests
+            if self.junit4_run_student_tests
             else reference_test_classes
         )
         compile_succeeded, compile_failed = _java.pairwise_compile(
@@ -191,14 +181,14 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
     def _extract_master_repo_name(self, path: pathlib.Path) -> str:
         """Extract the master repo name from the student repo at ``path``. For
         this to work, the corresponding master repo name must be in
-        self._master_repo_names.
+        self.args.master_repo_names.
 
         Args:
             path: path to the student repo
         Returns:
             the name of the associated master repository
         """
-        matches = list(filter(path.name.endswith, self._master_repo_names))
+        matches = list(filter(path.name.endswith, self.args.master_repo_names))
 
         if len(matches) == 1:
             return matches[0]
@@ -223,13 +213,13 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             a list of test classes from the corresponding reference test
             directory.
         """
-        test_dir = pathlib.Path(self._reference_tests_dir) / master_name
+        test_dir = pathlib.Path(self.junit4_reference_tests_dir) / master_name
         if not test_dir.is_dir():
             res = plug.Result(
                 SECTION,
                 plug.Status.ERROR,
                 "no reference test directory for {} in {}".format(
-                    master_name, self._reference_tests_dir
+                    master_name, self.junit4_reference_tests_dir
                 ),
             )
             raise _exception.ActError(res)
@@ -238,7 +228,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             file
             for file in test_dir.rglob("*.java")
             if file.name.endswith("Test.java")
-            and file.name not in self._ignore_tests
+            and file.name not in (self.junit4_ignore_tests or [])
         ]
 
         if not test_classes:
@@ -268,7 +258,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         results = []
         classpath = self._generate_classpath()
         with _junit4_runner.security_policy(
-            classpath, active=not self._disable_security
+            classpath, active=not self.junit4_disable_security
         ) as security_policy:
             for test_class, prod_class in test_prod_class_pairs:
                 test_result = _junit4_runner.run_test_class(
@@ -276,7 +266,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
                     prod_class,
                     classpath=classpath,
                     security_policy=security_policy,
-                    timeout=self._timeout,
+                    timeout=self.junit4_timeout,
                 )
                 results.append(test_result)
             return results
@@ -293,29 +283,30 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             "This will probably crash."
         )
         if not (
-            self._hamcrest_path
+            self.junit4_hamcrest_path
             or _junit4_runner.HAMCREST_JAR in CLASSPATH
         ):
             LOGGER.warning(warn.format(_junit4_runner.HAMCREST_JAR))
         if not (
-            self._junit_path or _junit4_runner.JUNIT_JAR in CLASSPATH
+            self.junit4_junit_path or _junit4_runner.JUNIT_JAR in CLASSPATH
         ):
             LOGGER.warning(warn.format(_junit4_runner.JUNIT_JAR))
 
         paths = list(paths)
-        if self._hamcrest_path:
-            paths.append(self._hamcrest_path)
-        if self._junit_path:
-            paths.append(self._junit_path)
+        if self.junit4_hamcrest_path:
+            paths.append(self.junit4_hamcrest_path)
+        if self.junit4_junit_path:
+            paths.append(self.junit4_junit_path)
         return _java.generate_classpath(*paths, classpath=CLASSPATH)
 
     def _check_jars_exist(self):
         """Check that the specified jar files actually exist."""
-        junit_path = self._junit_path or self._parse_from_classpath(
+        junit_path = self.junit4_junit_path or self._parse_from_classpath(
             _junit4_runner.JUNIT_JAR
         )
-        hamcrest_path = self._hamcrest_path or self._parse_from_classpath(
-            _junit4_runner.HAMCREST_JAR
+        hamcrest_path = (
+            self.junit4_hamcrest_path
+            or self._parse_from_classpath(_junit4_runner.HAMCREST_JAR)
         )
         for raw_path in (junit_path, hamcrest_path):
             if not pathlib.Path(raw_path).is_file():
