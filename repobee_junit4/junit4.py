@@ -39,35 +39,66 @@ ResultPair = Tuple[pathlib.Path, pathlib.Path]
 
 DEFAULT_TIMEOUT = 10
 
+CLASSPATH = os.getenv("CLASSPATH") or ""
 
-class JUnit4Hooks(plug.Plugin):
-    def __init__(self):
-        self._master_repo_names = []
-        self._reference_tests_dir = ""
-        self._ignore_tests = []
-        self._hamcrest_path = ""
-        self._junit_path = ""
-        self._classpath = os.getenv("CLASSPATH") or ""
-        self._verbose = False
-        self._very_verbose = False
-        self._disable_security = False
-        self._run_student_tests = False
-        self._timeout = DEFAULT_TIMEOUT
 
-    def clone_task(self) -> plug.Task:
-        return self._get_task()
+class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
+    __settings__ = plug.cli.command_extension_settings(
+        actions=[plug.cli.CoreCommand.repos.clone]
+    )
 
-    def setup_task(self) -> plug.Task:
-        return self._get_task()
+    junit4_reference_tests_dir = plug.cli.option(
+        help="Path to a directory with reference tests.",
+        required=True,
+        configurable=True,
+    )
 
-    def _get_task(self) -> plug.Task:
-        return plug.Task(
-            act=self._act,
-            handle_args=self._handle_args,
-            add_option=self._add_option,
-        )
+    junit4_ignore_tests = plug.cli.option(
+        help="Names of test classes to ignore.",
+        argparse_kwargs=dict(nargs="+"),
+    )
 
-    def _act(self, path: pathlib.Path, api: plug.API) -> plug.HookResult:
+    junit4_hamcrest_path = plug.cli.option(
+        help=f"Absolute path to the `{_junit4_runner.HAMCREST_JAR}` library.",
+        required=_junit4_runner.HAMCREST_JAR not in CLASSPATH,
+        configurable=True,
+    )
+
+    junit4_junit_path = plug.cli.option(
+        help=f"Absolute path to the `{_junit4_runner.JUNIT_JAR}` library.",
+        required=_junit4_runner.JUNIT_JAR not in CLASSPATH,
+        configurable=True,
+    )
+
+    junit4_disable_security = plug.cli.flag(
+        help="Disable the default security policy "
+        "(student code can do whatever)."
+    )
+
+    verbosity = plug.cli.mutually_exclusive_group(
+        junit4_verbose=plug.cli.flag(
+            help="Display more information about test failures.",
+        ),
+        junit4_very_verbose=plug.cli.flag(
+            help="Display the full failure output, without truncating.",
+        ),
+    )
+
+    junit4_run_student_tests = plug.cli.flag(
+        help="Run test classes found in the student repos instead of "
+        "those from the reference tests directory. Only tests that exist "
+        "in the reference tests directory will be searched for.",
+    )
+
+    junit4_timeout = plug.cli.option(
+        help="Maximum amount of seconds a test class is allowed to run "
+        "before timing out.",
+        default=DEFAULT_TIMEOUT,
+    )
+
+    def post_clone(
+        self, path: pathlib.Path, api: plug.PlatformAPI
+    ) -> plug.Result:
         """Look for production classes in the student repo corresponding to
         test classes in the reference tests directory.
 
@@ -78,8 +109,22 @@ class JUnit4Hooks(plug.Plugin):
         Args:
             path: Path to the student repo.
         Returns:
-            a plug.HookResult specifying the outcome.
+            a plug.Result specifying the outcome.
         """
+
+        self._master_repo_names = self.args.master_repo_names
+        self._reference_tests_dir = self.junit4_reference_tests_dir
+        self._ignore_tests = self.junit4_ignore_tests or []
+        self._hamcrest_path = self.junit4_hamcrest_path
+        self._junit_path = self.junit4_junit_path
+        self._verbose = self.junit4_verbose
+        self._very_verbose = self.junit4_very_verbose
+        self._disable_security = self.junit4_disable_security
+        self._run_student_tests = self.junit4_run_student_tests
+        self._timeout = self.junit4_timeout
+
+        self._check_jars_exist()
+
         if not pathlib.Path(self._reference_tests_dir).is_dir():
             raise plug.PlugError(
                 "{} is not a directory".format(self._reference_tests_dir)
@@ -89,7 +134,7 @@ class JUnit4Hooks(plug.Plugin):
         try:
             path = pathlib.Path(path)
             if not path.exists():
-                return plug.HookResult(
+                return plug.Result(
                     SECTION,
                     plug.Status.ERROR,
                     "student repo {!s} does not exist".format(path),
@@ -115,171 +160,15 @@ class JUnit4Hooks(plug.Plugin):
                     else plug.Status.SUCCESS
                 )
             )
-            return plug.HookResult(SECTION, status, msg)
+            return plug.Result(SECTION, status, msg)
         except _exception.ActError as exc:
             return exc.hook_result
         except Exception as exc:
-            return plug.HookResult(SECTION, plug.Status.ERROR, str(exc))
-
-    def _handle_args(self, args: argparse.Namespace) -> None:
-        """Get command line arguments.
-
-        Args:
-            args: The full namespace returned by
-            :py:func:`argparse.ArgumentParser.parse_args`
-        """
-        self._master_repo_names = args.master_repo_names
-        self._reference_tests_dir = (
-            args.junit4_reference_tests_dir
-            if args.junit4_reference_tests_dir
-            else self._reference_tests_dir
-        )
-        self._ignore_tests = (
-            args.junit4_ignore_tests
-            if args.junit4_ignore_tests
-            else self._ignore_tests
-        )
-        self._hamcrest_path = (
-            args.junit4_hamcrest_path
-            if args.junit4_hamcrest_path
-            else self._hamcrest_path
-        )
-        self._junit_path = (
-            args.junit4_junit_path
-            if args.junit4_junit_path
-            else self._junit_path
-        )
-        self._verbose = args.junit4_verbose
-        self._very_verbose = args.junit4_very_verbose
-        self._disable_security = (
-            args.junit4_disable_security
-            if args.junit4_disable_security
-            else self._disable_security
-        )
-        self._run_student_tests = args.junit4_run_student_tests
-        self._timeout = args.junit4_timeout
-        # at this point, the jars must have been specified and exist
-        self._check_jars_exist()
-
-    def _add_option(self, clone_parser: configparser.ConfigParser) -> None:
-        """Add reference_tests_dir argument to parser.
-
-        Args:
-            clone_parser: The ``clone`` subparser.
-        """
-        clone_parser.add_argument(
-            "--junit4-reference-tests-dir",
-            help="Path to a directory with reference tests.",
-            type=str,
-            dest="junit4_reference_tests_dir",
-            required=not self._reference_tests_dir,
-        )
-
-        clone_parser.add_argument(
-            "--junit4-ignore-tests",
-            help="Names of test classes to ignore.",
-            type=str,
-            dest="junit4_ignore_tests",
-            nargs="+",
-        )
-
-        clone_parser.add_argument(
-            "--junit4-hamcrest-path",
-            help="Absolute path to the `{}` library.".format(
-                _junit4_runner.HAMCREST_JAR
-            ),
-            type=str,
-            dest="junit4_hamcrest_path",
-            # required if not picked up in config_hook nor on classpath
-            required=not self._hamcrest_path
-            and _junit4_runner.HAMCREST_JAR not in self._classpath,
-        )
-
-        clone_parser.add_argument(
-            "--junit4-junit-path",
-            help="Absolute path to the `{}` library.".format(
-                _junit4_runner.JUNIT_JAR
-            ),
-            type=str,
-            dest="junit4_junit_path",
-            # required if not picked up in config_hook nor on classpath
-            required=not self._junit_path
-            and _junit4_runner.JUNIT_JAR not in self._classpath,
-        )
-
-        clone_parser.add_argument(
-            "--junit4-disable-security",
-            help=(
-                "Disable the default security policy (student code can do "
-                "whatever)."
-            ),
-            dest="junit4_disable_security",
-            action="store_true",
-        )
-
-        verbosity = clone_parser.add_mutually_exclusive_group()
-        verbosity.add_argument(
-            "--junit4-verbose",
-            help="Display more information about test failures.",
-            dest="junit4_verbose",
-            action="store_true",
-        )
-        verbosity.add_argument(
-            "--junit4-very-verbose",
-            help="Display the full failure output, without truncating.",
-            dest="junit4_very_verbose",
-            action="store_true",
-        )
-
-        clone_parser.add_argument(
-            "--junit4-run-student-tests",
-            help="Run test classes found in the student repos instead of "
-            "those from the reference tests directory. Only tests that exist "
-            "in the reference tests directory will be searched for.",
-            dest="junit4_run_student_tests",
-            action="store_true",
-        )
-
-        clone_parser.add_argument(
-            "--junit4-timeout",
-            help="Maximum amount of seconds a test class is allowed to run "
-            "before timing out.",
-            dest="junit4_timeout",
-            type=int,
-            default=self._timeout,
-        )
-
-    def config_hook(self, config_parser: configparser.ConfigParser) -> None:
-        """Look for hamcrest and junit paths in the config, and get the classpath.
-
-        Args:
-            config: the config parser after config has been read.
-        """
-        if SECTION not in config_parser:
-            return
-        self._hamcrest_path = config_parser.get(
-            SECTION, "hamcrest_path", fallback=self._hamcrest_path
-        )
-        self._junit_path = config_parser.get(
-            SECTION, "junit_path", fallback=self._junit_path
-        )
-        self._reference_tests_dir = config_parser.get(
-            SECTION, "reference_tests_dir", fallback=self._reference_tests_dir
-        )
-        if "timeout" in config_parser[SECTION]:
-            timeout = config_parser.get(SECTION, "timeout")
-            if not timeout.isnumeric():
-                raise plug.PlugError(
-                    "config value timeout in section [{}] must be an integer"
-                    ", but was: {}".format(SECTION, timeout)
-                )
-        self._timeout = int(
-            config_parser.get(SECTION, "timeout", fallback=str(self._timeout))
-        )
+            return plug.Result(SECTION, plug.Status.ERROR, str(exc))
 
     def _compile_all(
         self, path: pathlib.Path
-    ) -> Tuple[List[ResultPair], List[plug.HookResult]]:
+    ) -> Tuple[List[ResultPair], List[plug.Result]]:
         """Attempt to compile all java files in the repo.
 
         Returns:
@@ -321,7 +210,7 @@ class JUnit4Hooks(plug.Plugin):
                     ", ".join(matches)
                 )
             )
-            res = plug.HookResult(SECTION, plug.Status.ERROR, msg)
+            res = plug.Result(SECTION, plug.Status.ERROR, msg)
             raise _exception.ActError(res)
 
     def _find_test_classes(self, master_name) -> List[pathlib.Path]:
@@ -336,7 +225,7 @@ class JUnit4Hooks(plug.Plugin):
         """
         test_dir = pathlib.Path(self._reference_tests_dir) / master_name
         if not test_dir.is_dir():
-            res = plug.HookResult(
+            res = plug.Result(
                 SECTION,
                 plug.Status.ERROR,
                 "no reference test directory for {} in {}".format(
@@ -353,7 +242,7 @@ class JUnit4Hooks(plug.Plugin):
         ]
 
         if not test_classes:
-            res = plug.HookResult(
+            res = plug.Result(
                 SECTION,
                 plug.Status.WARNING,
                 "no files ending in `Test.java` found in {!s}".format(
@@ -405,11 +294,11 @@ class JUnit4Hooks(plug.Plugin):
         )
         if not (
             self._hamcrest_path
-            or _junit4_runner.HAMCREST_JAR in self._classpath
+            or _junit4_runner.HAMCREST_JAR in CLASSPATH
         ):
             LOGGER.warning(warn.format(_junit4_runner.HAMCREST_JAR))
         if not (
-            self._junit_path or _junit4_runner.JUNIT_JAR in self._classpath
+            self._junit_path or _junit4_runner.JUNIT_JAR in CLASSPATH
         ):
             LOGGER.warning(warn.format(_junit4_runner.JUNIT_JAR))
 
@@ -418,7 +307,7 @@ class JUnit4Hooks(plug.Plugin):
             paths.append(self._hamcrest_path)
         if self._junit_path:
             paths.append(self._junit_path)
-        return _java.generate_classpath(*paths, classpath=self._classpath)
+        return _java.generate_classpath(*paths, classpath=CLASSPATH)
 
     def _check_jars_exist(self):
         """Check that the specified jar files actually exist."""
@@ -442,7 +331,7 @@ class JUnit4Hooks(plug.Plugin):
         """
         matches = [
             pathlib.Path(p)
-            for p in self._classpath.split(os.pathsep)
+            for p in CLASSPATH.split(os.pathsep)
             if p.endswith(filename)
         ]
         if not matches:
