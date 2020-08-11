@@ -46,51 +46,50 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
     )
 
     junit4_reference_tests_dir = plug.cli.option(
-        help="Path to a directory with reference tests.",
+        help="path to a directory with reference tests",
         required=True,
         configurable=True,
     )
 
     junit4_ignore_tests = plug.cli.option(
-        help="Names of test classes to ignore.",
+        help="names of test classes to ignore",
         argparse_kwargs=dict(nargs="+"),
     )
 
     junit4_hamcrest_path = plug.cli.option(
-        help=f"Absolute path to the `{_junit4_runner.HAMCREST_JAR}` library.",
+        help=f"absolute path to the `{_junit4_runner.HAMCREST_JAR}` library",
         required=_junit4_runner.HAMCREST_JAR not in CLASSPATH,
         configurable=True,
     )
 
     junit4_junit_path = plug.cli.option(
-        help=f"Absolute path to the `{_junit4_runner.JUNIT_JAR}` library.",
+        help=f"absolute path to the `{_junit4_runner.JUNIT_JAR}` library",
         required=_junit4_runner.JUNIT_JAR not in CLASSPATH,
         configurable=True,
     )
 
     junit4_disable_security = plug.cli.flag(
-        help="Disable the default security policy "
-        "(student code can do whatever)."
+        help="disable the default security policy "
+        "(student code can do whatever)"
     )
 
     verbosity = plug.cli.mutually_exclusive_group(
         junit4_verbose=plug.cli.flag(
-            help="Display more information about test failures.",
+            help="display more information about test failures",
         ),
         junit4_very_verbose=plug.cli.flag(
-            help="Display the full failure output, without truncating.",
+            help="display the full failure output, without truncating",
         ),
     )
 
     junit4_run_student_tests = plug.cli.flag(
-        help="Run test classes found in the student repos instead of "
-        "those from the reference tests directory. Only tests that exist "
-        "in the reference tests directory will be searched for.",
+        help="run test classes found in the student repos instead that match "
+        "test classes from the reference tests directory",
     )
 
     junit4_timeout = plug.cli.option(
-        help="Maximum amount of seconds a test class is allowed to run "
-        "before timing out.",
+        help="maximum amount of seconds a test class is allowed to run "
+        "before timing out",
         default=DEFAULT_TIMEOUT,
     )
 
