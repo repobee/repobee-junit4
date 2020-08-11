@@ -15,12 +15,7 @@ Requirements
    3. ``junit-4.12.jar`` and ``hamcest-core-1.3.jar`` downloaded
 
 First of all, make sure that RepoBee is installed and up-to-date. For a
-first-time install of RepoBee, see the `RepoBee install docs`_. If you
-already have RepoBee installed, make sure it is up-to-date.
-
-.. code-block:: bash
-
-   python3 -m pip install --user --upgrade repobee
+first-time install of RepoBee, see the `RepoBee install docs`_.
 
 Furthermore, a JDK must be installed. ``repobee-junit4`` has been extensively
 tested with OpenJDK 8+, but should work well with JDK 7 and later. Make sure
@@ -43,18 +38,17 @@ them manually.
 Install plugin
 --------------
 
-To install ``repobee-junit4``, simply use ``pip`` again.
+To install ``repobee-junit4``, simply use RepoBee's plugin manager. It will
+guide you through the process of install the ``junit4`` plugin.
 
 .. code-block:: bash
 
-   python3 -m pip install --user repobee-junit4
+    $ repobee plugin install
 
-RepoBee should simply be able to find ``repobee-junit4`` if they are both
-installed in the same environment. To verify that it is correctly installed,
-run ``repobee -p junit4 clone -h``. You should see some additional command
-line arguments added (such as ``--reference-tests-dir``). See the `Using
-existing plugins`_ for more information on how to use plugins in general,
-and :ref:`usage` for details on this plugin.
+Then run ``repobee -p junit4 repos clone -h``. You should see some additional
+command line arguments added (such as ``--junit4-reference-tests-dir``). See
+`Using existing plugins`_ for more information on how to use plugins in
+general, and :ref:`usage` for details on this plugin.
 
 .. _config:
 
@@ -64,17 +58,17 @@ Configuration
 Some options for ``repobee-junit4`` can be configured in the `RepoBee
 configuration file`_ by adding the ``[junit4]`` section. Everything
 ``repobee-junit4`` needs to operate *can* be provided on the command line, but
-I strongly recommend adding the absolute paths to the ``junit-4.12.jar`` and
+we strongly recommend adding the absolute paths to the ``junit-4.12.jar`` and
 ``hamcrest-core-1.3.jar`` files to the config file. Simply append the following
 to the end of the configuration file. Here's a sample configuration.
 
 .. code-block:: bash
 
    [junit4]
-   junit_path = /absolute/path/to/junit-4.12.jar
-   hamcrest_path = /absolute/path/to/hamcrest-core-1.3.jar
-   reference_tests_dir = /absolute/path/to/reference_tests_dir
-   timeout = 5
+   junit4_junit_path = /absolute/path/to/junit-4.12.jar
+   junit4_hamcrest_path = /absolute/path/to/hamcrest-core-1.3.jar
+   junit4_reference_tests_dir = /absolute/path/to/reference_tests_dir
+   junit4_timeout = 5
 
 .. important::
 

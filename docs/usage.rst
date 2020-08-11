@@ -28,7 +28,7 @@ together.
 CLI arguments
 -------------
 
-``repobee-junit4`` adds several new CLI arguments to the ``repobee clone``
+``repobee-junit4`` adds several new CLI arguments to the ``repos clone``
 command.
 
 * ``--junit4-reference-tests-dir``
