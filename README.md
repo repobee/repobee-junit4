@@ -14,20 +14,21 @@
 This is a plugin for [RepoBee](https://github.com/repobee/repobee) that runs
 JUnit4 test classes on production classes in cloned student repos. It allows
 teachers and teaching assistants to quickly assess the work performed by
-students in a managed and fair way. The plugin hooks into the `repobee clone`
+students in a managed and fair way. The plugin hooks into the `repos clone`
 command, and executes test classes on repos when they have been cloned to disk.
 A summary report is then printed to the logfile and terminal. By default, the
 plugin will only report which test classes failed (and how many tests), but it
 is possible to ask for more verbose output which includes detailed information
-about each test failure. See this
-[example use case](https://repobee-junit4.readthedocs.io/en/latest/usage.html#example-use-case)
+about each test failure. See this [example use
+case](https://repobee-junit4.readthedocs.io/en/latest/usage.html#example-use-case)
 for a more detailed look at how it works.
 
 ### Install
-`repobee-junit4` is on PyPi, so `python3 -m pip install repobee-junit4` should do the
-trick. See the
-[install instructions](https://repobee-junit4.readthedocs.io/en/latest/install.html)
-for more elaborate instructions.
+Use RepoBee's plugin manager to install.
+
+```bash
+$ repobee plugin install
+```
 
 ### Getting started
 The best way to get started with `repobee-junit4` is to head over to the
