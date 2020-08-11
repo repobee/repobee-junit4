@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/repobee/repobee-junit4.svg?branch=master)](https://travis-ci.com/repobee/repobee-junit4)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee-junit4/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee-junit4)
 [![PyPi Version](https://badge.fury.io/py/repobee-junit4.svg)](https://badge.fury.io/py/repobee-junit4)
-![Supported Python Versions](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-blue.svg)
+![Supported Python Versions](https://img.shields.io/badge/python-3.6%2C%203.7%2C%203.8-blue.svg)
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
