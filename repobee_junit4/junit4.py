@@ -90,6 +90,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
     junit4_timeout = plug.cli.option(
         help="maximum amount of seconds a test class is allowed to run "
         "before timing out",
+        configurable=True,
         default=DEFAULT_TIMEOUT,
     )
 
