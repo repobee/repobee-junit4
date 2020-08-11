@@ -105,7 +105,6 @@ def setup_hooks(
     reference_tests_dir=RTD,
     master_repo_names=MASTER_REPO_NAMES,
     ignore_tests=[],
-    classpath=CLASSPATH,
     hamcrest_path=HAMCREST_PATH,
     junit_path=JUNIT_PATH,
     verbose=False,
@@ -119,7 +118,6 @@ def setup_hooks(
     hooks.args = argparse.Namespace(master_repo_names=master_repo_names)
     hooks.junit4_reference_tests_dir = reference_tests_dir
     hooks.junit4_ignore_tests = ignore_tests
-    hooks.junit4_classpath = classpath
     hooks.junit4_hamcrest_path = hamcrest_path
     hooks.junit4_junit_path = junit_path
     hooks.junit4_verbose = verbose
@@ -130,7 +128,12 @@ def setup_hooks(
     return hooks
 
 
-class TestActOnClonedRepo:
+@pytest.fixture(autouse=True)
+def set_classpath(monkeypatch):
+    monkeypatch.setattr("repobee_junit4.junit4.CLASSPATH", CLASSPATH)
+
+
+class TestPostClone:
     """
 
     .. warning::
@@ -440,13 +443,12 @@ BadClass.java:2: error: <identifier> expected
             _CP.format("garbage/path", HAMCREST_PATH, ".", JUNIT_PATH),
         ],
     )
-    def test_jars_found_on_classpath(self, classpath):
+    def test_jars_found_on_classpath(self, classpath, monkeypatch):
         """Test that acting on a repo when the hamcrest and junit jars are only
         specified on the classpath works as intended.
         """
-        hooks = setup_hooks(
-            hamcrest_path="", junit_path="", classpath=classpath
-        )
+        monkeypatch.setattr("repobee_junit4.junit4.CLASSPATH", classpath)
+        hooks = setup_hooks(hamcrest_path="", junit_path="")
 
         result = hooks.post_clone(SUCCESS_REPO, api=None)
 
