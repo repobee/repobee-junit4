@@ -8,5 +8,5 @@ pytest-mock
 pytest>=4.0.0
 sphinx-argparse
 sphinx-autodoc-typehints
-sphinx>=1.8.2
+sphinx>=3.2.0
 sphinx_rtd_theme
