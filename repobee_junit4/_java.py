@@ -69,7 +69,7 @@ def fqn_from_file(java_filepath: pathlib.Path) -> str:
     if not java_filepath.suffix == ".java":
         raise ValueError("{} not a path to a .java file".format(java_filepath))
     package = extract_package(java_filepath)
-    simple_name = java_filepath.name[:-len(java_filepath.suffix)]
+    simple_name = java_filepath.name[: -len(java_filepath.suffix)]
     return fqn(package, simple_name)
 
 
@@ -168,7 +168,7 @@ def pairwise_compile(
     test_classes: List[pathlib.Path],
     java_files: List[pathlib.Path],
     classpath: str,
-) -> Tuple[List[plug.HookResult], List[plug.HookResult]]:
+) -> Tuple[List[plug.Result], List[plug.Result]]:
     """Compile test classes with their associated production classes.
 
     For each test class:
@@ -182,7 +182,7 @@ def pairwise_compile(
         java_files: A list of paths to java files from the student repo.
         classpath: A base classpath to use.
     Returns:
-        A tuple of lists of HookResults on the form ``(succeeded, failed)``
+        A tuple of lists of Results on the form ``(succeeded, failed)``
     """
     failed = []
     succeeded = []
@@ -195,7 +195,7 @@ def pairwise_compile(
             test_class, classpath, java_files
         )
         if status != Status.SUCCESS:
-            failed.append(plug.HookResult(SECTION, status, msg))
+            failed.append(plug.Result(SECTION, status, msg))
         else:
             succeeded.append((test_class, prod_class_path))
 
