@@ -19,6 +19,8 @@ from unittest import mock
 from collections import namedtuple
 from functools import partial
 
+from typing import Union
+
 import pytest
 
 import repobee_plug as plug
@@ -100,6 +102,8 @@ CLASSPATH_WITH_JARS = CLASSPATH + ":{}:{}".format(JUNIT_PATH, HAMCREST_PATH)
 NUM_PRIME_CHECKER_TESTS = 3
 NUM_FIBO_TESTS = 2
 
+DUMMY_TEAM = plug.StudentTeam(members=[], name="dummy")
+
 
 def setup_hooks(
     reference_tests_dir=RTD,
@@ -128,6 +132,15 @@ def setup_hooks(
     return hooks
 
 
+def wrap_in_student_repo(path: Union[str, pathlib.Path]) -> plug.StudentRepo:
+    return plug.StudentRepo(
+        name=pathlib.Path(path).name,
+        team=DUMMY_TEAM,
+        url="dummy_url",
+        _path=pathlib.Path(path),
+    )
+
+
 @pytest.fixture(autouse=True)
 def set_classpath(monkeypatch):
     monkeypatch.setattr("repobee_junit4.junit4.CLASSPATH", CLASSPATH)
@@ -148,7 +161,9 @@ class TestPostClone:
     def test_runs_student_tests_correctly(self):
         hooks = setup_hooks(run_student_tests=True, verbose=True)
 
-        result = hooks.post_clone(BAD_TESTS_REPO, api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(BAD_TESTS_REPO), api=None,
+        )
 
         assert result.status == plug.Status.WARNING
         assert "Student wrote a bad test" in str(result.msg)
@@ -156,7 +171,9 @@ class TestPostClone:
     def test_handles_duplicate_student_tests(self):
         hooks = setup_hooks(run_student_tests=True, verbose=True)
 
-        result = hooks.post_clone(DUPLICATE_TESTS_REPO, api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(DUPLICATE_TESTS_REPO), api=None
+        )
 
         assert result.status == plug.Status.ERROR
         assert (
@@ -167,7 +184,7 @@ class TestPostClone:
     def test_handles_missing_student_tests(self):
         hooks = setup_hooks(run_student_tests=True, verbose=True)
 
-        result = hooks.post_clone(SUCCESS_REPO, api=None)
+        result = hooks.post_clone(wrap_in_student_repo(SUCCESS_REPO), api=None)
 
         assert result.status == plug.Status.ERROR
         assert (
@@ -188,7 +205,9 @@ class TestPostClone:
             "repobee_junit4.junit4.JUnit4Hooks._compile_all",
             side_effect=_raise_exception,
         ):
-            result = default_hooks.post_clone(SUCCESS_REPO, api=None)
+            result = default_hooks.post_clone(
+                wrap_in_student_repo(SUCCESS_REPO), api=None
+            )
 
         assert result.status == plug.Status.ERROR
         assert result.msg == msg
@@ -197,7 +216,9 @@ class TestPostClone:
         """Test running the plugin when the reference tests include an abstract
         test class.
         """
-        result = default_hooks.post_clone(ABSTRACT_TEST_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(ABSTRACT_TEST_REPO), api=None
+        )
 
         assert result.status == plug.Status.SUCCESS
         assert (
@@ -212,7 +233,9 @@ class TestPostClone:
 
     def test_correct_repo(self, default_hooks):
         """Test with repo that should not have test failures."""
-        result = default_hooks.post_clone(SUCCESS_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(SUCCESS_REPO), api=None
+        )
 
         assert result.status == plug.Status.SUCCESS
         assert (
@@ -227,7 +250,9 @@ class TestPostClone:
 
     def test_fail_repo(self, default_hooks):
         """Test with repo that should have test failures."""
-        result = default_hooks.post_clone(FAIL_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(FAIL_REPO), api=None
+        )
 
         assert result.status == plug.Status.WARNING
         assert (
@@ -256,7 +281,7 @@ java.lang.AssertionError:
 Expected: is <false>
      but: was <true>"""  # noqa: W291
 
-        result = hooks.post_clone(FAIL_REPO, api=None)
+        result = hooks.post_clone(wrap_in_student_repo(FAIL_REPO), api=None)
 
         assert (
             _output.test_result_header(
@@ -273,7 +298,9 @@ Expected: is <false>
         """Test that a warning is returned when the reference test directory
         has no corresponding subdirectory for the specified repo.
         """
-        result = default_hooks.post_clone(NO_TEST_DIR_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(NO_TEST_DIR_REPO), api=None
+        )
 
         assert result.status == plug.Status.ERROR
         assert "no reference test directory for" in result.msg
@@ -283,7 +310,9 @@ Expected: is <false>
         has a corresponeding subdirectory for the repo, but there are no
         test files in it.
         """
-        result = default_hooks.post_clone(NO_TESTS_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(NO_TESTS_REPO), api=None
+        )
 
         assert result.status == plug.Status.WARNING
         assert "no files ending in `Test.java` found" in result.msg
@@ -293,7 +322,9 @@ Expected: is <false>
         has no corresponding master repo (i.e. there is no master repo name
         contained in the student repo name).
         """
-        result = default_hooks.post_clone(NO_MASTER_MATCH_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(NO_MASTER_MATCH_REPO), api=None
+        )
 
         assert result.status == plug.Status.ERROR
         assert "no master repo name matching" in result.msg
@@ -303,7 +334,9 @@ Expected: is <false>
             pass
         # dir is now deleted
 
-        result = default_hooks.post_clone(dirname, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(dirname), api=None
+        )
 
         assert result.status == plug.Status.ERROR
         assert "student repo {} does not exist".format(dirname) in result.msg
@@ -320,13 +353,17 @@ Expected: is <false>
             target = str(pathlib.Path(tmpdir) / "student-week-11")
             shutil.copytree(str(SUCCESS_REPO), target)
 
-            result = default_hooks.post_clone(target, api=None)
+            result = default_hooks.post_clone(
+                wrap_in_student_repo(target), api=None
+            )
 
         assert result.status == plug.Status.ERROR
         assert "no production class found for PrimeCheckerTest" in result.msg
 
     def test_error_result_on_compile_error(self, default_hooks):
-        result = default_hooks.post_clone(str(COMPILE_ERROR_REPO), api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(COMPILE_ERROR_REPO), api=None
+        )
 
         assert result.status == plug.Status.ERROR
         assert "Compile error" in result.msg
@@ -337,7 +374,9 @@ Expected: is <false>
     ):
         hooks = setup_hooks(verbose=True)
 
-        result = hooks.post_clone(str(COMPILE_ERROR_REPO), api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(COMPILE_ERROR_REPO), api=None
+        )
 
         assert result.status == plug.Status.ERROR
         assert len(result.msg.split(os.linesep)) == _output.DEFAULT_MAX_LINES
@@ -362,7 +401,9 @@ BadClass.java:2: error: <identifier> expected
             "\n"
         )
 
-        result = hooks.post_clone(COMPILE_ERROR_REPO, api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(COMPILE_ERROR_REPO), api=None
+        )
 
         result_lines = result.msg.strip().split("\n")
         assert result.status == plug.Status.ERROR
@@ -371,13 +412,17 @@ BadClass.java:2: error: <identifier> expected
         assert len(result_lines) >= len(expected_error_msg_lines)
 
     def test_runs_correctly_when_paths_include_whitespace(self, default_hooks):
-        result = default_hooks.post_clone(DIR_PATHS_WITH_SPACES, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(DIR_PATHS_WITH_SPACES), api=None
+        )
 
         assert result.status == plug.Status.SUCCESS
 
     def test_runs_with_packaged_code(self, default_hooks):
         """Test that packaged code is handled correctly."""
-        result = default_hooks.post_clone(PACKAGED_CODE_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(PACKAGED_CODE_REPO), api=None
+        )
 
         assert result.status == plug.Status.SUCCESS
         assert (
@@ -397,7 +442,9 @@ BadClass.java:2: error: <identifier> expected
         directory structure in the student repo does not correspond to the
         package statement in the test class.
         """
-        result = default_hooks.post_clone(NO_DIR_STRUCTURE_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(NO_DIR_STRUCTURE_REPO), api=None
+        )
 
         assert result.status == plug.Status.ERROR
 
@@ -405,7 +452,9 @@ BadClass.java:2: error: <identifier> expected
         """Test that a reference test suite with several packages is run
         correctly.
         """
-        result = default_hooks.post_clone(MULTIPLE_PACKAGES_REPO, api=None)
+        result = default_hooks.post_clone(
+            wrap_in_student_repo(MULTIPLE_PACKAGES_REPO), api=None
+        )
 
         assert result.status == plug.Status.SUCCESS
 
@@ -415,7 +464,7 @@ BadClass.java:2: error: <identifier> expected
         hooks = setup_hooks(reference_tests_dir=str(deleted_dir))
 
         with pytest.raises(plug.PlugError) as exc_info:
-            hooks.post_clone(SUCCESS_REPO, api=None)
+            hooks.post_clone(wrap_in_student_repo(SUCCESS_REPO), api=None)
 
         assert "{} is not a directory".format(str(deleted_dir)) in str(
             exc_info.value
@@ -427,7 +476,7 @@ BadClass.java:2: error: <identifier> expected
             hooks = setup_hooks(reference_tests_dir=str(tmpfile))
 
             with pytest.raises(plug.PlugError) as exc_info:
-                hooks.post_clone(SUCCESS_REPO, api=None)
+                hooks.post_clone(wrap_in_student_repo(SUCCESS_REPO), api=None)
 
         assert "{} is not a directory".format(str(tmpfile)) in str(
             exc_info.value
@@ -450,7 +499,7 @@ BadClass.java:2: error: <identifier> expected
         monkeypatch.setattr("repobee_junit4.junit4.CLASSPATH", classpath)
         hooks = setup_hooks(hamcrest_path="", junit_path="")
 
-        result = hooks.post_clone(SUCCESS_REPO, api=None)
+        result = hooks.post_clone(wrap_in_student_repo(SUCCESS_REPO), api=None)
 
         assert result.status == plug.Status.SUCCESS
 
@@ -463,7 +512,7 @@ BadClass.java:2: error: <identifier> expected
             partial(_output._truncate_lines, max_len=line_length),
         )
 
-        result = hooks.post_clone(FAIL_REPO, api=None)
+        result = hooks.post_clone(wrap_in_student_repo(FAIL_REPO), api=None)
 
         lines = result.msg.split(os.linesep)[1:]  # skip summary line
         assert len(lines) > 1
@@ -482,7 +531,7 @@ BadClass.java:2: error: <identifier> expected
             partial(_output._truncate_lines, max_len=line_length),
         )
 
-        result = hooks.post_clone(FAIL_REPO, api=None)
+        result = hooks.post_clone(wrap_in_student_repo(FAIL_REPO), api=None)
 
         lines = result.msg.split(os.linesep)
         assert len(lines) > 1
@@ -494,7 +543,9 @@ BadClass.java:2: error: <identifier> expected
         timeout = 1
         hooks = setup_hooks(timeout=timeout)
 
-        result = hooks.post_clone(ENDLESS_WHILE_LOOP, api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(ENDLESS_WHILE_LOOP), api=None
+        )
 
         assert result.status == plug.Status.WARNING
         assert "Timed out after {} seconds".format(timeout) in result.msg
@@ -511,7 +562,9 @@ class TestSecurityPolicy:
         """
         hooks = setup_hooks(verbose=True)
 
-        result = hooks.post_clone(UNAUTHORIZED_READ_FILE_REPO, api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(UNAUTHORIZED_READ_FILE_REPO), api=None
+        )
 
         assert result.status == plug.Status.WARNING
         assert (
@@ -522,7 +575,9 @@ class TestSecurityPolicy:
         """Test that the default security policy blocks network access."""
         hooks = setup_hooks(verbose=True)
 
-        result = hooks.post_clone(UNAUTHORIZED_NETWORK_ACCESS_REPO, api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(UNAUTHORIZED_NETWORK_ACCESS_REPO), api=None
+        )
 
         assert result.status == plug.Status.WARNING
         assert (
@@ -535,7 +590,9 @@ class TestSecurityPolicy:
         """
         hooks = setup_hooks(disable_security=True)
 
-        result = hooks.post_clone(UNAUTHORIZED_READ_FILE_REPO, api=None)
+        result = hooks.post_clone(
+            wrap_in_student_repo(UNAUTHORIZED_READ_FILE_REPO), api=None
+        )
 
         assert result.status == plug.Status.SUCCESS
         assert (

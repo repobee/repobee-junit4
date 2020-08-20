@@ -95,7 +95,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
     )
 
     def post_clone(
-        self, path: pathlib.Path, api: plug.PlatformAPI
+        self, repo: plug.StudentRepo, api: plug.PlatformAPI
     ) -> plug.Result:
         """Look for production classes in the student repo corresponding to
         test classes in the reference tests directory.
@@ -105,7 +105,8 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         tests directory.
 
         Args:
-            path: Path to the student repo.
+            repo: A student repo.
+            api: An instance of the platform API.
         Returns:
             a plug.Result specifying the outcome.
         """
@@ -119,15 +120,14 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         assert self.args.master_repo_names
         assert self.junit4_reference_tests_dir
         try:
-            path = pathlib.Path(path)
-            if not path.exists():
+            if not repo.path.exists():
                 return plug.Result(
                     SECTION,
                     plug.Status.ERROR,
-                    "student repo {!s} does not exist".format(path),
+                    "student repo {!s} does not exist".format(repo.path),
                 )
 
-            compile_succeeded, compile_failed = self._compile_all(path)
+            compile_succeeded, compile_failed = self._compile_all(repo.path)
             test_results = self._run_tests(compile_succeeded)
 
             has_failures = compile_failed or any(
