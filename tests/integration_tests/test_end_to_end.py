@@ -33,7 +33,7 @@ import envvars
 Args = namedtuple(
     "Args",
     (
-        "master_repo_names",
+        "assignments",
         "reference_tests_dir",
         "ignore_tests",
         "hamcrest_path",
@@ -47,7 +47,7 @@ Args.__new__.__defaults__ = (None,) * len(Args._fields)
 CUR_DIR = pathlib.Path(__file__).parent
 REPO_DIR = CUR_DIR / "repos"
 
-MASTER_REPO_NAMES = (
+ASSIGNMENT_NAMES = (
     "week-10",
     "week-11",
     "week-12",
@@ -61,7 +61,7 @@ SUCCESS_REPO = REPO_DIR / "some-student-week-10"
 FAIL_REPO = REPO_DIR / "other-student-week-11"
 NO_TEST_DIR_REPO = REPO_DIR / "some-student-week-12"
 NO_TESTS_REPO = REPO_DIR / "best-student-week-13"
-NO_MASTER_MATCH_REPO = REPO_DIR / "some-student-week-nope"
+NO_ASSIGNMENT_MATCH_REPO = REPO_DIR / "some-student-week-nope"
 COMPILE_ERROR_REPO = REPO_DIR / "compile-error-week-10"
 DIR_PATHS_WITH_SPACES = REPO_DIR / "space-week-10"
 ABSTRACT_TEST_REPO = REPO_DIR / "student-week-14"
@@ -82,7 +82,7 @@ assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_TEST_DIR_REPO.exists(), "test pre-requisite error, dir must exist"
 assert NO_TESTS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert (
-    NO_MASTER_MATCH_REPO.exists()
+    NO_ASSIGNMENT_MATCH_REPO.exists()
 ), "test pre-requisite error, dir must exist"
 assert COMPILE_ERROR_REPO.exists(), "test pre-requisite error, dir must exist"
 assert (
@@ -107,7 +107,7 @@ DUMMY_TEAM = plug.StudentTeam(members=[], name="dummy")
 
 def setup_hooks(
     reference_tests_dir=RTD,
-    master_repo_names=MASTER_REPO_NAMES,
+    assignments=ASSIGNMENT_NAMES,
     ignore_tests=[],
     hamcrest_path=HAMCREST_PATH,
     junit_path=JUNIT_PATH,
@@ -119,7 +119,7 @@ def setup_hooks(
 ):
     """Return an instance of JUnit4Hooks with pre-configured arguments."""
     hooks = junit4.JUnit4Hooks("junit4")
-    hooks.args = argparse.Namespace(master_repo_names=master_repo_names)
+    hooks.args = argparse.Namespace(assignments=assignments)
     hooks.junit4_reference_tests_dir = reference_tests_dir
     hooks.junit4_ignore_tests = ignore_tests
     hooks.junit4_hamcrest_path = hamcrest_path
@@ -317,17 +317,17 @@ Expected: is <false>
         assert result.status == plug.Status.WARNING
         assert "no files ending in `Test.java` found" in result.msg
 
-    def test_error_result_when_no_master_repo_match(self, default_hooks):
+    def test_error_result_when_no_assignment_match(self, default_hooks):
         """Test that the result has an error status when the student repo
-        has no corresponding master repo (i.e. there is no master repo name
+        has no corresponding assignment (i.e. there is no assignment name
         contained in the student repo name).
         """
         result = default_hooks.post_clone(
-            wrap_in_student_repo(NO_MASTER_MATCH_REPO), api=None
+            wrap_in_student_repo(NO_ASSIGNMENT_MATCH_REPO), api=None
         )
 
         assert result.status == plug.Status.ERROR
-        assert "no master repo name matching" in result.msg
+        assert "no assignment name matching" in result.msg
 
     def test_error_result_when_path_does_not_exist(self, default_hooks):
         with tempfile.TemporaryDirectory() as dirname:

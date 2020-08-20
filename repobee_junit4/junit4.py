@@ -117,7 +117,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             raise plug.PlugError(
                 "{} is not a directory".format(self.junit4_reference_tests_dir)
             )
-        assert self.args.master_repo_names
+        assert self.args.assignments
         assert self.junit4_reference_tests_dir
         try:
             if not repo.path.exists():
@@ -127,7 +127,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
                     "student repo {!s} does not exist".format(repo.path),
                 )
 
-            compile_succeeded, compile_failed = self._compile_all(repo.path)
+            compile_succeeded, compile_failed = self._compile_all(repo)
             test_results = self._run_tests(compile_succeeded)
 
             has_failures = compile_failed or any(
@@ -157,7 +157,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             return plug.Result(SECTION, plug.Status.ERROR, str(exc))
 
     def _compile_all(
-        self, path: pathlib.Path
+        self, repo: plug.StudentRepo
     ) -> Tuple[List[ResultPair], List[plug.Result]]:
         """Attempt to compile all java files in the repo.
 
@@ -165,11 +165,11 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             a tuple of lists ``(succeeded, failed)``, where ``succeeded``
             are tuples on the form ``(test_class, prod_class)`` paths.
         """
-        java_files = list(path.rglob("*.java"))
-        master_name = self._extract_master_repo_name(path)
-        reference_test_classes = self._find_test_classes(master_name)
+        java_files = list(repo.path.rglob("*.java"))
+        assignment_name = self._extract_assignment_name(repo.name)
+        reference_test_classes = self._find_test_classes(assignment_name)
         test_classes = (
-            _java.get_student_test_classes(path, reference_test_classes)
+            _java.get_student_test_classes(repo.path, reference_test_classes)
             if self.junit4_run_student_tests
             else reference_test_classes
         )
@@ -178,23 +178,14 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         )
         return compile_succeeded, compile_failed
 
-    def _extract_master_repo_name(self, path: pathlib.Path) -> str:
-        """Extract the master repo name from the student repo at ``path``. For
-        this to work, the corresponding master repo name must be in
-        self.args.master_repo_names.
-
-        Args:
-            path: path to the student repo
-        Returns:
-            the name of the associated master repository
-        """
-        matches = list(filter(path.name.endswith, self.args.master_repo_names))
+    def _extract_assignment_name(self, repo_name: str) -> str:
+        matches = list(filter(repo_name.endswith, self.args.assignments))
 
         if len(matches) == 1:
             return matches[0]
         else:
             msg = (
-                "no master repo name matching the student repo"
+                "no assignment name matching the student repo"
                 if not matches
                 else "multiple matching master repo names: {}".format(
                     ", ".join(matches)
@@ -203,23 +194,25 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             res = plug.Result(SECTION, plug.Status.ERROR, msg)
             raise _exception.ActError(res)
 
-    def _find_test_classes(self, master_name) -> List[pathlib.Path]:
+    def _find_test_classes(self, assignment_name) -> List[pathlib.Path]:
         """Find all test classes (files ending in ``Test.java``) in directory
-        at <reference_tests_dir>/<master_name>.
+        at <reference_tests_dir>/<assignment_name>.
 
         Args:
-            master_name: Name of a master repo.
+            assignment_name: Name of an assignment.
         Returns:
             a list of test classes from the corresponding reference test
             directory.
         """
-        test_dir = pathlib.Path(self.junit4_reference_tests_dir) / master_name
+        test_dir = (
+            pathlib.Path(self.junit4_reference_tests_dir) / assignment_name
+        )
         if not test_dir.is_dir():
             res = plug.Result(
                 SECTION,
                 plug.Status.ERROR,
                 "no reference test directory for {} in {}".format(
-                    master_name, self.junit4_reference_tests_dir
+                    assignment_name, self.junit4_reference_tests_dir
                 ),
             )
             raise _exception.ActError(res)
