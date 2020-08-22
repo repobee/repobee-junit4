@@ -52,8 +52,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
     )
 
     junit4_ignore_tests = plug.cli.option(
-        help="names of test classes to ignore",
-        argparse_kwargs=dict(nargs="+"),
+        help="names of test classes to ignore", argparse_kwargs=dict(nargs="+")
     )
 
     junit4_hamcrest_path = plug.cli.option(
@@ -75,16 +74,16 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
 
     verbosity = plug.cli.mutually_exclusive_group(
         junit4_verbose=plug.cli.flag(
-            help="display more information about test failures",
+            help="display more information about test failures"
         ),
         junit4_very_verbose=plug.cli.flag(
-            help="display the full failure output, without truncating",
+            help="display the full failure output, without truncating"
         ),
     )
 
     junit4_run_student_tests = plug.cli.flag(
         help="run test classes found in the student repos instead that match "
-        "test classes from the reference tests directory",
+        "test classes from the reference tests directory"
     )
 
     junit4_timeout = plug.cli.option(
@@ -92,6 +91,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         "before timing out",
         configurable=True,
         default=DEFAULT_TIMEOUT,
+        converter=int,
     )
 
     def post_clone(
@@ -154,6 +154,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         except _exception.ActError as exc:
             return exc.hook_result
         except Exception as exc:
+            plug.log.exception("critical")
             return plug.Result(SECTION, plug.Status.ERROR, str(exc))
 
     def _compile_all(
