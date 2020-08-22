@@ -7,8 +7,8 @@
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Breaking changes in 0.7.0:** v0.7.0 of this plugin changes the names of
-> _all_ command line options.
+> **repobee-junit4 v1.0.0 requires RepoBee 3:** From version 1.0,
+> repobee-junit4 is only compatible with RepoBee 3+.
 
 ## Overview
 This is a plugin for [RepoBee](https://github.com/repobee/repobee) that runs
@@ -33,7 +33,7 @@ $ repobee plugin install
 ### Getting started
 The best way to get started with `repobee-junit4` is to head over to the
 [Docs](https://repobee-junit4.readthedocs.io), where you (among
-other things) will find
+other things) will find more elaborate
 [install instructions](https://repobee-junit4.readthedocs.io/en/latest/install.html)
 and [usage instructions](https://repobee-junit4.readthedocs.io/en/latest/usage.html).
 The latter includes an
