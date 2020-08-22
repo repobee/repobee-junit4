@@ -22,5 +22,5 @@ class JavaError(ActError):
     """Raise if something goes wrong with Java files."""
 
     def __init__(self, msg):
-        res = plug.Result(hook=SECTION, status=plug.Status.ERROR, msg=msg)
+        res = plug.Result(name=SECTION, status=plug.Status.ERROR, msg=msg)
         super().__init__(res)
