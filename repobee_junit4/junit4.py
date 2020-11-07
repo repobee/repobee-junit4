@@ -18,9 +18,6 @@ discovered in student repositories. See the README for more details.
 """
 import os
 import pathlib
-import tempfile
-import shutil
-import git
 from typing import Tuple, List
 
 
@@ -48,15 +45,10 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         actions=[plug.cli.CoreCommand.repos.clone]
     )
 
-    reference_tests_mutex = plug.cli.mutually_exclusive_group(
-        junit4_reference_tests_dir=plug.cli.option(
-            help="path to a directory with reference tests",
-        ),
-        junit4_solutions_branch=plug.cli.option(
-            help="name of the template repository branch containing solutions "
-            "(and reference tests)"
-        ),
-        __required__=True,
+    junit4_reference_tests_dir = plug.cli.option(
+        help="path to a directory with reference tests",
+        required=True,
+        configurable=True,
     )
 
     junit4_ignore_tests = plug.cli.option(
@@ -102,11 +94,6 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         converter=int,
     )
 
-    junit4_template_org_name = plug.cli.option(
-        help="name of the template organization to fetch templates from",
-        configurable=True,
-    )
-
     def post_clone(
         self, repo: plug.StudentRepo, api: plug.PlatformAPI
     ) -> plug.Result:
@@ -123,88 +110,52 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         Returns:
             a plug.Result specifying the outcome.
         """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
 
-            if self.junit4_solutions_branch:
-                assert self.junit4_template_org_name
-                assert self.args.assignments
+        self._check_jars_exist()
 
-                reference_tests_dir = workdir / "reference-tests-dir-tmp"
-                reference_tests_dir.mkdir()
-
-                for assignment_name in self.args.assignments:
-                    assignment_test_dir = reference_tests_dir / assignment_name
-                    assignment_test_dir.mkdir()
-
-                    repo_url = api.insert_auth(
-                        api.get_repo_urls(
-                            [assignment_name],
-                            org_name=self.junit4_template_org_name,
-                        )[0]
-                    )
-                    template_repo = git.Repo.clone_from(
-                        repo_url, to_path=workdir / assignment_name,
-                    )
-                    template_repo.git.checkout(self.junit4_solutions_branch)
-                    reference_test_classes = (workdir / assignment_name).rglob(
-                        "*Test.java"
-                    )
-                    for test_class in reference_test_classes:
-                        shutil.copy(
-                            src=test_class,
-                            dst=assignment_test_dir / test_class.name,
-                        )
-
-                self.junit4_reference_tests_dir = reference_tests_dir
-
-            self._check_jars_exist()
-
-            if not pathlib.Path(self.junit4_reference_tests_dir).is_dir():
-                raise plug.PlugError(
-                    "{} is not a directory".format(
-                        self.junit4_reference_tests_dir
-                    )
-                )
-            assert self.args.assignments
-            assert self.junit4_reference_tests_dir
-            try:
-                if not repo.path.exists():
-                    return plug.Result(
-                        SECTION,
-                        plug.Status.ERROR,
-                        "student repo {!s} does not exist".format(repo.path),
-                    )
-
-                compile_succeeded, compile_failed = self._compile_all(repo)
-                test_results = self._run_tests(compile_succeeded)
-
-                has_failures = compile_failed or any(
-                    map(lambda r: not r.success, test_results)
+        if not pathlib.Path(self.junit4_reference_tests_dir).is_dir():
+            raise plug.PlugError(
+                "{} is not a directory".format(self.junit4_reference_tests_dir)
+            )
+        assert self.args.assignments
+        assert self.junit4_reference_tests_dir
+        try:
+            if not repo.path.exists():
+                return plug.Result(
+                    SECTION,
+                    plug.Status.ERROR,
+                    "student repo {!s} does not exist".format(repo.path),
                 )
 
-                msg = _output.format_results(
-                    test_results,
-                    compile_failed,
-                    self.junit4_verbose,
-                    self.junit4_very_verbose,
-                )
+            compile_succeeded, compile_failed = self._compile_all(repo)
+            test_results = self._run_tests(compile_succeeded)
 
-                status = (
-                    plug.Status.ERROR
-                    if compile_failed
-                    else (
-                        plug.Status.WARNING
-                        if has_failures
-                        else plug.Status.SUCCESS
-                    )
+            has_failures = compile_failed or any(
+                map(lambda r: not r.success, test_results)
+            )
+
+            msg = _output.format_results(
+                test_results,
+                compile_failed,
+                self.junit4_verbose,
+                self.junit4_very_verbose,
+            )
+
+            status = (
+                plug.Status.ERROR
+                if compile_failed
+                else (
+                    plug.Status.WARNING
+                    if has_failures
+                    else plug.Status.SUCCESS
                 )
-                return plug.Result(SECTION, status, msg)
-            except _exception.ActError as exc:
-                return exc.hook_result
-            except Exception as exc:
-                plug.log.exception("critical")
-                return plug.Result(SECTION, plug.Status.ERROR, str(exc))
+            )
+            return plug.Result(SECTION, status, msg)
+        except _exception.ActError as exc:
+            return exc.hook_result
+        except Exception as exc:
+            plug.log.exception("critical")
+            return plug.Result(SECTION, plug.Status.ERROR, str(exc))
 
     def _compile_all(
         self, repo: plug.StudentRepo
