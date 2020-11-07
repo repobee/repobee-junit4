@@ -1,10 +1,12 @@
 import pathlib
 import tempfile
 import dataclasses
-import git
 import shutil
+import os
 
 import pytest
+import git
+
 import repobee_testhelpers
 
 from repobee_junit4 import junit4
@@ -61,7 +63,9 @@ class TestGenerateRTD:
         repobee_testhelpers.funcs.run_repobee(
             f"repos clone -a {ASSIGNMENTS_ARG} "
             f"--base-url {platform_url} "
-            f"--junit4-reference-tests-dir {rtd_path} ",
+            f"--junit4-reference-tests-dir {rtd_path} "
+            f"--junit4-hamcrest-path {HAMCREST_PATH} "
+            f"--junit4-junit-path {JUNIT_PATH} ",
             plugins=[junit4],
             workdir=workdir,
         )
@@ -103,6 +107,9 @@ EXPECTED_REFERENCE_TESTS = {
     }
     for repo_dir in TEMPLATE_REPO_DIRS
 }
+
+HAMCREST_PATH = pathlib.Path(os.getenv("REPOBEE_JUNIT4_JUNIT"))
+JUNIT_PATH = pathlib.Path(os.getenv("REPOBEE_JUNIT4_HAMCREST"))
 
 
 @pytest.fixture(autouse=True)
