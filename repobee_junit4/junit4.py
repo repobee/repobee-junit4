@@ -30,6 +30,7 @@ from repobee_junit4 import _junit4_runner
 from repobee_junit4 import _exception
 from repobee_junit4 import _output
 from repobee_junit4 import SECTION
+from repobee_junit4.generate_rtd_command import GenerateRTD  # noqa: F401
 
 LOGGER = daiquiri.getLogger(__file__)
 
