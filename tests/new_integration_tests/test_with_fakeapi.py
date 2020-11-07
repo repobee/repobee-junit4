@@ -108,8 +108,12 @@ EXPECTED_REFERENCE_TESTS = {
     for repo_dir in TEMPLATE_REPO_DIRS
 }
 
-HAMCREST_PATH = pathlib.Path(os.getenv("REPOBEE_JUNIT4_JUNIT"))
-JUNIT_PATH = pathlib.Path(os.getenv("REPOBEE_JUNIT4_HAMCREST"))
+HAMCREST_PATH = pathlib.Path(os.getenv("REPOBEE_JUNIT4_JUNIT")).resolve(
+    strict=True
+)
+JUNIT_PATH = pathlib.Path(os.getenv("REPOBEE_JUNIT4_HAMCREST")).resolve(
+    strict=True
+)
 
 
 @pytest.fixture(autouse=True)
