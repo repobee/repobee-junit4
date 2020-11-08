@@ -17,13 +17,19 @@ from repobee_junit4 import SECTION
 class TestGenerateRTD:
     """Tests for the generate-rtd command."""
 
-    def test_generate_reference_tests_directory(
-        self, tmp_path_factory, platform_url
-    ):
-        # arrange
-        workdir = tmp_path_factory.mktemp("workdir")
-        rtd_path = workdir / "test-reference-tests-directory"
+    @pytest.fixture
+    def workdir(self, tmp_path_factory):
+        return tmp_path_factory.mktemp("workdir")
 
+    @pytest.fixture
+    def rtd_path(self, workdir):
+        rtd = workdir / "test-reference-tests-directory"
+        rtd.mkdir()
+        return rtd
+
+    def test_generate_reference_tests_directory(
+        self, tmp_path_factory, platform_url, workdir, rtd_path
+    ):
         # act
         run_generate_rtd(base_url=platform_url, rtd=rtd_path, workdir=workdir)
 
@@ -43,12 +49,15 @@ class TestGenerateRTD:
         assert iterations > 0, "the assertion loop did not execute"
 
     def test_use_generated_reference_tests_directory(
-        self, tmp_path_factory, platform_url, setup_student_repos
+        self,
+        tmp_path_factory,
+        platform_url,
+        setup_student_repos,
+        workdir,
+        rtd_path,
     ):
         """Test using a generated RTD with the clone command."""
         # arrange
-        workdir = tmp_path_factory.mktemp("workdir")
-        rtd_path = workdir / "test-reference-tests-directory"
         run_generate_rtd(base_url=platform_url, rtd=rtd_path, workdir=workdir)
         clone_dir = workdir / "clone_dir"
         clone_dir.mkdir()
@@ -78,16 +87,13 @@ class TestGenerateRTD:
         assert iterations > 0, "the assertion loop did not execute"
 
     def test_raises_when_assignment_tests_directory_is_non_empty(
-        self, tmp_path_factory, platform_url
+        self, tmp_path_factory, platform_url, workdir, rtd_path
     ):
         """We don't want to accidentally overwrite anything, and so should
         raise an error if any of the test directories already exists.
         """
         # arrange
-        workdir = tmp_path_factory.mktemp("workdir")
-        rtd_path = workdir / "test-reference-tests-directory"
         existing_assignment_dir = rtd_path / ASSIGNMENT_NAMES[0]
-
         existing_assignment_dir.mkdir(parents=True)
 
         # act/assert
