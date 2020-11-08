@@ -15,7 +15,7 @@ to be familiar with to fully understand the rest of the documentation.
   classes by simply appending ``Test`` to the production class name. For
   example, ``LinkedList.java`` would have a test class called
   ``LinkedListTest.java``.
-- **Test directory:** A directory named after a master repo, containing tests
+- **Test directory:** A directory named after a template repo, containing tests
   for the assignments in that repo.
 - **Reference tests directory (RTD):** A directory containing test directories
   (as defined above).
@@ -78,8 +78,8 @@ command.
 
 Example use case
 ----------------
-Assume that we have a master repo called *fibonacci* with an assignment to
-implement a method that returns the n:th Fibonacci number. The master repo
+Assume that we have a template repo called *fibonacci* with an assignment to
+implement a method that returns the n:th Fibonacci number. The template repo
 could then look like this:
 
 .. code-block:: bash
@@ -91,7 +91,7 @@ could then look like this:
 
 To be able to test the students' implementations, we write a test class
 ``FiboTest.java`` and put it in our reference tests directory, in a test
-directory named after the master repository. The reference test directory would
+directory named after the template repository. The reference test directory would
 then look like this.
 
 .. code-block:: bash
@@ -113,7 +113,7 @@ this:
 
 .. code-block:: none
 
-   $ repobee -p junit4 clone --mn fibonacci -s ham spam eggs --junit4-reference-tests-dir /path/to/reference_tests
+   $ repobee -p junit4 clone -a fibonacci -s ham spam eggs --junit4-reference-tests-dir /path/to/reference_tests
    [INFO] cloning into student repos ...
    [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/ham-fibonacci
    [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/spam-fibonacci
@@ -149,13 +149,13 @@ this:
    The output is color coded when displayed in a terminal.
 
 
-Let's digest what happened here. We provided the master repo name (``--mn
+Let's digest what happened here. We provided the assignment name (``-a
 fibonacci``) and the reference tests directory (``--junit4-reference-tests-dir
 /path/to/reference_tests``). ``repobee-junit4`` then looked in the test
-directory matching the master repo name (i.e. *fibonacci*) test directory and
-found a test class ``FiboTest.java``. By the naming convention, it knows that
-it should now look for a file called ``Fibo.java`` in the student repos. The
-following then happened when testing the repos:
+directory matching the assignment name (i.e. *fibonacci*) and found a test
+class ``FiboTest.java``. By the naming convention, it knows that it should now
+look for a file called ``Fibo.java`` in the student repos. The following then
+happened when testing the repos:
 
 * *spam-fibonacci:* The production class ``Fibo.java`` was found and passed the
   test class.
