@@ -4,7 +4,7 @@ in template repositories.
 import shutil
 import pathlib
 import tempfile
-from typing import List
+from typing import List, Iterable, Mapping
 
 import git
 
@@ -54,18 +54,32 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
     )
 
     def command(self, api: plug.PlatformAPI):
-        _check_assignment_test_directories_are_empty(
+        existing_test_dirs = _get_existing_assignment_test_dirs(
             self.reference_tests_dir, self.args.assignments
         )
+        if existing_test_dirs:
+            return plug.Result(
+                name=str(JUNIT4_COMMAND_CATEGORY.generate_rtd),
+                msg=_format_failure_message(existing_test_dirs),
+                status=plug.Status.ERROR,
+            )
 
+        assignment_test_classes = {}
         for assignment_name in self.args.assignments:
-            _generate_assignment_tests_dir(
+            extracted_test_classes = _generate_assignment_tests_dir(
                 assignment_name,
                 self.branch,
                 self.args.template_org_name,
                 self.reference_tests_dir,
                 api,
             )
+            assignment_test_classes[assignment_name] = extracted_test_classes
+
+        return plug.Result(
+            name=str(JUNIT4_COMMAND_CATEGORY.generate_rtd),
+            msg=_format_success_message(assignment_test_classes),
+            status=plug.Status.SUCCESS,
+        )
 
 
 def _generate_assignment_tests_dir(
@@ -74,7 +88,7 @@ def _generate_assignment_tests_dir(
     template_org_name: str,
     rtd: pathlib.Path,
     api: plug.PlatformAPI,
-):
+) -> Iterable[pathlib.Path]:
     """Generate the reference tests directory for a single assignment as a
     subdirectory of the reference tests dir with the same name as the
     assignment. The assignment test directory must not already exist.
@@ -88,18 +102,21 @@ def _generate_assignment_tests_dir(
         template_repo = _clone_repo_to(
             repo_url, branch, workdir / assignment_name
         )
-        _copy_test_classes(
+        yield from _copy_test_classes(
             src_dir=pathlib.Path(template_repo.working_tree_dir),
             dst_dir=assignment_test_dir,
         )
 
 
-def _copy_test_classes(src_dir: pathlib.Path, dst_dir: pathlib.Path) -> None:
+def _copy_test_classes(
+    src_dir: pathlib.Path, dst_dir: pathlib.Path
+) -> Iterable[pathlib.Path]:
     reference_test_classes = src_dir.rglob("*Test.java")
     for test_class in reference_test_classes:
         shutil.copy(
             src=test_class, dst=dst_dir / test_class.name,
         )
+        yield test_class.relative_to(src_dir)
 
 
 def _clone_repo_to(
@@ -120,19 +137,27 @@ def _get_authed_url(
     )
 
 
-def _check_assignment_test_directories_are_empty(
+def _get_existing_assignment_test_dirs(
     rtd: pathlib.Path, assignment_names: List[str]
-) -> None:
-    if not rtd.exists():
-        return
+) -> List[pathlib.Path]:
+    return [
+        rtd / assignment_name
+        for assignment_name in assignment_names
+        if (rtd / assignment_name).exists()
+    ]
 
-    rtd_subdirs = {
-        subdir.name: subdir for subdir in rtd.iterdir() if subdir.is_dir()
-    }
-    for assignment_name in assignment_names:
-        test_dir = rtd_subdirs.get(assignment_name)
-        if test_dir and test_dir.exists():
-            raise plug.PlugError(
-                f"{test_dir} exists, please remove it in order "
-                "to gather fresh tests for the assignment"
-            )
+
+def _format_success_message(
+    assignment_test_classes: Mapping[str, Iterable[pathlib.Path]]
+) -> str:
+    return "\n".join(
+        f"{assignment_name}: {', '.join(map(str, test_classes))}"
+        for assignment_name, test_classes in assignment_test_classes.items()
+    )
+
+
+def _format_failure_message(existing_test_dirs: Iterable[pathlib.Path]) -> str:
+    return (
+        f"Some assignment test directories already exist, please delete "
+        f"and try again: {', '.join(map(str, existing_test_dirs))}"
+    )

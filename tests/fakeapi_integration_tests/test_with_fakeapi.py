@@ -31,13 +31,17 @@ class TestGenerateRTD:
         self, tmp_path_factory, platform_url, workdir, rtd_path
     ):
         # act
-        run_generate_rtd(base_url=platform_url, rtd=rtd_path, workdir=workdir)
+        result = run_generate_rtd(
+            base_url=platform_url, rtd=rtd_path, workdir=workdir
+        )
 
         # assert
         rtd_subdirs = list(rtd_path.iterdir())
+        assert result.status == plug.Status.SUCCESS
         assert set(ASSIGNMENT_NAMES) == {subdir.name for subdir in rtd_subdirs}
         iterations = 0
         for assignment_name in ASSIGNMENT_NAMES:
+            assert assignment_name in result.msg
             iterations += 1
             assignment_tests_dir = rtd_path / assignment_name
             test_files = {
@@ -97,12 +101,13 @@ class TestGenerateRTD:
         existing_assignment_dir.mkdir(parents=True)
 
         # act/assert
-        with pytest.raises(plug.PlugError) as exc_info:
-            run_generate_rtd(
-                base_url=platform_url, rtd=rtd_path, workdir=workdir
-            )
+        result = run_generate_rtd(
+            base_url=platform_url, rtd=rtd_path, workdir=workdir
+        )
 
-        assert f"{existing_assignment_dir.name} exists" in str(exc_info.value)
+        assert result.status == plug.Status.ERROR
+        assert existing_assignment_dir.name in result.msg
+        assert "delete" in result.msg
 
 
 @dataclasses.dataclass(frozen=True)
@@ -157,7 +162,7 @@ def run_generate_rtd(
     template_org_name: str = repobee_testhelpers.const.TEMPLATE_ORG_NAME,
     branch: str = SOLUTIONS_BRANCH,
     assignments: str = ASSIGNMENTS_ARG,
-):
+) -> plug.Result:
     """Helper for running the generate-rtd command."""
     return repobee_testhelpers.funcs.run_repobee(
         f"{_generate_rtd.JUNIT4_COMMAND_CATEGORY.generate_rtd} "
@@ -169,7 +174,7 @@ def run_generate_rtd(
         f"--reference-tests-dir {rtd}",
         plugins=[junit4],
         workdir=workdir,
-    )
+    )[str(_generate_rtd.JUNIT4_COMMAND_CATEGORY.generate_rtd)][0]
 
 
 @pytest.fixture(autouse=True)
