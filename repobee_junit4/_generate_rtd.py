@@ -16,16 +16,26 @@ JUNIT4_COMMAND_CATEGORY = plug.cli.category(
     help="help commands for the junit4 plugin",
 )
 
+_COMMAND_DESCRIPTION = """
+Generate the reference tests directory (RTD) from template repositories by
+extracting any Java test classes from the template. For each assignment
+specified, a subdirectory in the reference tests directory (RTD) is created
+with the name of the assignment. When generating the test directory for a given
+assignment X, there must not be an X directory already in the RTD. If you want
+to refresh the tests for an assignment X, then delete its corresponding
+subdirectory before running this command. WARNING: This command is in alpha and
+behavior may change in coming updates.
+""".replace(
+    "\n", " "
+).strip()
+
 
 class GenerateRTD(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         action=JUNIT4_COMMAND_CATEGORY.generate_rtd,
         help="generate the reference tests directory by extracting test "
         "classes from template repositories (note: alpha test)",
-        description="Generate the reference tests directory from template "
-        "repositories by extracting any Java test classes from the template. "
-        "WARNING: This command is in alpha and behavior may change in coming "
-        "updates.",
+        description=_COMMAND_DESCRIPTION,
         base_parsers=[
             plug.cli.BaseParser.ASSIGNMENTS,
             plug.cli.BaseParser.TEMPLATE_ORG,
