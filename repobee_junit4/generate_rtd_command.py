@@ -4,6 +4,7 @@ in template repositories.
 import shutil
 import pathlib
 import tempfile
+from typing import List
 
 import git
 
@@ -43,6 +44,9 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
     def command(self, api: plug.PlatformAPI):
         with tempfile.TemporaryDirectory() as tmpdir:
             workdir = pathlib.Path(tmpdir)
+            _check_assignment_test_directories_are_empty(
+                self.reference_tests_dir, self.args.assignments
+            )
 
             for assignment_name in self.args.assignments:
                 assignment_test_dir = (
@@ -50,6 +54,8 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
                 )
                 assignment_test_dir.mkdir(parents=True, exist_ok=False)
 
+                # TODO temporary workaround as insert_auth is not implemented
+                # in FakeAPI.get_repo_urls. Should be fixed in RepoBee 3.4.
                 repo_url = api.insert_auth(
                     api.get_repo_urls(
                         [assignment_name],
@@ -68,3 +74,21 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
                         src=test_class,
                         dst=assignment_test_dir / test_class.name,
                     )
+
+
+def _check_assignment_test_directories_are_empty(
+    rtd: pathlib.Path, assignment_names: List[str]
+) -> None:
+    if not rtd.exists():
+        return
+
+    rtd_subdirs = {
+        subdir.name: subdir for subdir in rtd.iterdir() if subdir.is_dir()
+    }
+    for assignment_name in assignment_names:
+        test_dir = rtd_subdirs.get(assignment_name)
+        if test_dir and test_dir.exists():
+            raise plug.PlugError(
+                f"{test_dir} exists, please remove it in order "
+                "to gather fresh tests for the assignment"
+            )

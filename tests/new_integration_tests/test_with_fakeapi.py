@@ -77,6 +77,27 @@ class TestGenerateRTD:
 
         assert iterations > 0, "the assertion loop did not execute"
 
+    def test_raises_when_assignment_tests_directory_is_non_empty(
+        self, tmp_path_factory, platform_url
+    ):
+        """We don't want to accidentally overwrite anything, and so should
+        raise an error if any of the test directories already exists.
+        """
+        # arrange
+        workdir = tmp_path_factory.mktemp("workdir")
+        rtd_path = workdir / "test-reference-tests-directory"
+        existing_assignment_dir = rtd_path / ASSIGNMENT_NAMES[0]
+
+        existing_assignment_dir.mkdir(parents=True)
+
+        # act/assert
+        with pytest.raises(plug.PlugError) as exc_info:
+            run_generate_rtd(
+                base_url=platform_url, rtd=rtd_path, workdir=workdir
+            )
+
+        assert f"{existing_assignment_dir.name} exists" in str(exc_info.value)
+
 
 @dataclasses.dataclass(frozen=True)
 class TemplateRepoDir:
@@ -155,7 +176,6 @@ def setup_template_repos(platform_url, platform_dir):
         template_repo_dir_in_org.mkdir(exist_ok=False, parents=True)
         git.Repo.init(template_repo_dir_in_org, bare=True)
         template_repo_uri = f"file://{template_repo_dir_in_org.absolute()}"
-        print(template_repo_uri)
 
         push_dir_to_branch(
             template_repo_dir.master_branch, template_repo_uri, "master"
