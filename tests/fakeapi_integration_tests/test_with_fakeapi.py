@@ -10,7 +10,7 @@ import git
 import repobee_testhelpers
 import repobee_plug as plug
 
-from repobee_junit4 import junit4
+from repobee_junit4 import junit4, generate_rtd_command
 from repobee_junit4 import SECTION
 
 
@@ -160,7 +160,8 @@ def run_generate_rtd(
 ):
     """Helper for running the generate-rtd command."""
     return repobee_testhelpers.funcs.run_repobee(
-        f"junit4 generate-rtd -a {assignments} "
+        f"{generate_rtd_command.JUNIT4_COMMAND_CATEGORY.generate_rtd} "
+        f"-a {assignments} "
         f"--base-url {base_url} "
         f"--template-org-name "
         f"{repobee_testhelpers.const.TEMPLATE_ORG_NAME} "

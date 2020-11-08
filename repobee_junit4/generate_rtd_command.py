@@ -21,9 +21,11 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         action=JUNIT4_COMMAND_CATEGORY.generate_rtd,
         help="generate the reference tests directory by extracting test "
-        "classes from template repositories",
+        "classes from template repositories (note: alpha test)",
         description="Generate the reference tests directory from template "
-        "repositories by extracting any Java test classes from the template. ",
+        "repositories by extracting any Java test classes from the template. "
+        "WARNING: This command is in alpha and behavior may change in coming "
+        "updates.",
         base_parsers=[
             plug.cli.BaseParser.ASSIGNMENTS,
             plug.cli.BaseParser.TEMPLATE_ORG,
