@@ -102,7 +102,7 @@ then look like this.
 
 .. note::
 
-   I strongly recommend having the reference tests in version control.
+    The RTD can be generated from tem
 
 Now, assume that we have students *ham*, *spam* and *eggs*, and their student
 repos *ham-fibonacci*, *spam-fibonacci* and *eggs-fibonacci*. Assuming that the
@@ -180,5 +180,51 @@ Other common causes of errors include:
    - See :ref:`security`.
 
 This concludes the use case example, I hope you found it enlightening.
+
+Generating the RTD from template repositories (``junit4 generate-rtd``)
+-----------------------------------------------------------------------
+
+This plugin comes with an auxiliary command for generating the RTD from template
+repositories that contain the full test suite on some branch. For example, a
+common setup may be to keep the version of a template that's pushed to student
+repositories on the ``master`` branch, and the full solutions on a branch called
+``solutions``.
+
+.. note::
+
+    See the `repobee-sanitizer plugin
+    <https://github.com/repobee/repobee-sanitizer>`_ for assistance with
+    maintaining a branch with complete solutions to an assignment, and one
+    branch with the student's version.
+
+Given that the reference tests are present on a branch in a template repo, the
+``junit4 generate-rtd`` command can be used to extract test classes from it.
+Execute it like so.
+
+.. code-block:: bash
+
+   $ repobee -p junit4 generate-rtd -a fibonacci -s ham spam eggs --reference-tests-dir /path/to/reference_tests --branch solutions
+
+Assuming ``FiboTest.java`` was present on the ``solutions``` branch, a
+test directory called ``fibonacci`` should have been generated in the
+reference tests directory:
+
+.. code-block:: bash
+
+   reference_tests
+   └── fibonacci
+       └── FiboTest.java
+
+To later generate test directories for other assignments, simply run the
+command again but with other assignments (i.e. other arguments for the ``-a``
+option).
+
+.. important::
+
+    Although you can generate test directories for new assignments in the same
+    RTD as you have previously generated test directories for other
+    assignments, you can't overwrite an existing test directory. If you need to
+    update the tests for some assignments, first delete its corresponding test
+    directory in the RTD.
 
 .. _RepoBee config docs: https://repobee.readthedocs.io/en/latest/configuration.html#configuration-file
