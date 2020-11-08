@@ -64,8 +64,13 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
                 status=plug.Status.ERROR,
             )
 
+        assignment_names_progress = plug.cli.io.progress_bar(
+            self.args.assignments,
+            desc="Processing template repos",
+            unit="repo",
+        )
         assignment_test_classes = {}
-        for assignment_name in self.args.assignments:
+        for assignment_name in assignment_names_progress:
             extracted_test_classes = _generate_assignment_tests_dir(
                 assignment_name,
                 self.branch,
@@ -88,7 +93,7 @@ def _generate_assignment_tests_dir(
     template_org_name: str,
     rtd: pathlib.Path,
     api: plug.PlatformAPI,
-) -> Iterable[pathlib.Path]:
+) -> List[pathlib.Path]:
     """Generate the reference tests directory for a single assignment as a
     subdirectory of the reference tests dir with the same name as the
     assignment. The assignment test directory must not already exist.
@@ -102,9 +107,11 @@ def _generate_assignment_tests_dir(
         template_repo = _clone_repo_to(
             repo_url, branch, workdir / assignment_name
         )
-        yield from _copy_test_classes(
-            src_dir=pathlib.Path(template_repo.working_tree_dir),
-            dst_dir=assignment_test_dir,
+        return list(
+            _copy_test_classes(
+                src_dir=pathlib.Path(template_repo.working_tree_dir),
+                dst_dir=assignment_test_dir,
+            )
         )
 
 
@@ -151,7 +158,7 @@ def _format_success_message(
     assignment_test_classes: Mapping[str, Iterable[pathlib.Path]]
 ) -> str:
     return "\n".join(
-        f"{assignment_name}: {', '.join(map(str, test_classes))}"
+        f"{assignment_name}: {', '.join(tc.name for tc in test_classes)}"
         for assignment_name, test_classes in assignment_test_classes.items()
     )
 
