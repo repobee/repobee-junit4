@@ -44,38 +44,70 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
     )
 
     def command(self, api: plug.PlatformAPI):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
-            _check_assignment_test_directories_are_empty(
-                self.reference_tests_dir, self.args.assignments
+        _check_assignment_test_directories_are_empty(
+            self.reference_tests_dir, self.args.assignments
+        )
+
+        for assignment_name in self.args.assignments:
+            _generate_assignment_tests_dir(
+                assignment_name,
+                self.branch,
+                self.args.template_org_name,
+                self.reference_tests_dir,
+                api,
             )
 
-            for assignment_name in self.args.assignments:
-                assignment_test_dir = (
-                    self.reference_tests_dir / assignment_name
-                )
-                assignment_test_dir.mkdir(parents=True, exist_ok=False)
 
-                # TODO temporary workaround as insert_auth is not implemented
-                # in FakeAPI.get_repo_urls. Should be fixed in RepoBee 3.4.
-                repo_url = api.insert_auth(
-                    api.get_repo_urls(
-                        [assignment_name],
-                        org_name=self.args.template_org_name,
-                    )[0]
-                )
-                template_repo = git.Repo.clone_from(
-                    repo_url, to_path=workdir / assignment_name,
-                )
-                template_repo.git.checkout(self.branch)
-                reference_test_classes = (workdir / assignment_name).rglob(
-                    "*Test.java"
-                )
-                for test_class in reference_test_classes:
-                    shutil.copy(
-                        src=test_class,
-                        dst=assignment_test_dir / test_class.name,
-                    )
+def _generate_assignment_tests_dir(
+    assignment_name: str,
+    branch: str,
+    template_org_name: str,
+    rtd: pathlib.Path,
+    api: plug.PlatformAPI,
+):
+    """Generate the reference tests directory for a single assignment as a
+    subdirectory of the reference tests dir with the same name as the
+    assignment. The assignment test directory must not already exist.
+    """
+    assignment_test_dir = rtd / assignment_name
+    assignment_test_dir.mkdir(parents=True, exist_ok=False)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        workdir = pathlib.Path(tmpdir)
+        repo_url = _get_authed_url(assignment_name, template_org_name, api)
+        template_repo = _clone_repo_to(
+            repo_url, branch, workdir / assignment_name
+        )
+        _copy_test_classes(
+            src_dir=pathlib.Path(template_repo.working_tree_dir),
+            dst_dir=assignment_test_dir,
+        )
+
+
+def _copy_test_classes(src_dir: pathlib.Path, dst_dir: pathlib.Path) -> None:
+    reference_test_classes = src_dir.rglob("*Test.java")
+    for test_class in reference_test_classes:
+        shutil.copy(
+            src=test_class, dst=dst_dir / test_class.name,
+        )
+
+
+def _clone_repo_to(
+    repo_url: str, branch: str, to_path: pathlib.Path,
+) -> git.Repo:
+    template_repo = git.Repo.clone_from(repo_url, to_path)
+    template_repo.git.checkout(branch)
+    return template_repo
+
+
+def _get_authed_url(
+    assignment_name: str, org_name: str, api: plug.PlatformAPI
+) -> str:
+    # FIXME temporary workaround as insert_auth is not implemented
+    # in FakeAPI.get_repo_urls. Should be fixed in RepoBee 3.4.
+    return api.insert_auth(
+        api.get_repo_urls([assignment_name], org_name=org_name,)[0]
+    )
 
 
 def _check_assignment_test_directories_are_empty(
