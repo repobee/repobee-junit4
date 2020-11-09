@@ -69,22 +69,53 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
             desc="Processing template repos",
             unit="repo",
         )
+        return _generate_test_dirs(
+            assignment_names_progress,
+            branch=self.branch,
+            template_org_name=self.args.template_org_name,
+            reference_tests_dir=self.reference_tests_dir,
+            api=api,
+        )
+
+
+def _generate_test_dirs(
+    assignment_names: List[str],
+    branch: str,
+    template_org_name: str,
+    reference_tests_dir: pathlib.Path,
+    api: plug.PlatformAPI,
+) -> plug.Result:
+    """Generate test directories for the provided assignments, assuming that
+    they are not already present in the reference tests directory.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        workdir = pathlib.Path(tmpdir)
         assignment_test_classes = {}
-        for assignment_name in assignment_names_progress:
-            extracted_test_classes = _generate_assignment_tests_dir(
-                assignment_name,
-                self.branch,
-                self.args.template_org_name,
-                self.reference_tests_dir,
-                api,
-            )
+        for assignment_name in assignment_names:
+            try:
+                extracted_test_classes = _generate_assignment_tests_dir(
+                    assignment_name, branch, template_org_name, workdir, api
+                )
+            except _CloneError as exc:
+                return plug.Result(
+                    name=str(JUNIT4_COMMAND_CATEGORY.generate_rtd),
+                    msg=f"Failed to clone template for "
+                    f"'{exc.dir_name}' on branch '{exc.branch}'. "
+                    "Ensure that the repo and branch exist.",
+                    status=plug.Status.ERROR,
+                )
             assignment_test_classes[assignment_name] = extracted_test_classes
 
-        return plug.Result(
-            name=str(JUNIT4_COMMAND_CATEGORY.generate_rtd),
-            msg=_format_success_message(assignment_test_classes),
-            status=plug.Status.SUCCESS,
-        )
+        for test_dir in workdir.iterdir():
+            shutil.copytree(
+                src=test_dir, dst=reference_tests_dir / test_dir.name
+            )
+
+    return plug.Result(
+        name=str(JUNIT4_COMMAND_CATEGORY.generate_rtd),
+        msg=_format_success_message(assignment_test_classes),
+        status=plug.Status.SUCCESS,
+    )
 
 
 def _generate_assignment_tests_dir(
@@ -101,11 +132,10 @@ def _generate_assignment_tests_dir(
     assignment_test_dir = rtd / assignment_name
     assignment_test_dir.mkdir(parents=True, exist_ok=False)
 
+    repo_url = _get_authed_url(assignment_name, template_org_name, api)
     with tempfile.TemporaryDirectory() as tmpdir:
-        workdir = pathlib.Path(tmpdir)
-        repo_url = _get_authed_url(assignment_name, template_org_name, api)
         template_repo = _clone_repo_to(
-            repo_url, branch, workdir / assignment_name
+            repo_url, branch, pathlib.Path(tmpdir) / assignment_name
         )
         return list(
             _copy_test_classes(
@@ -120,17 +150,19 @@ def _copy_test_classes(
 ) -> Iterable[pathlib.Path]:
     reference_test_classes = src_dir.rglob("*Test.java")
     for test_class in reference_test_classes:
-        shutil.copy(
-            src=test_class, dst=dst_dir / test_class.name,
-        )
+        shutil.copy(src=test_class, dst=dst_dir / test_class.name)
         yield test_class.relative_to(src_dir)
 
 
 def _clone_repo_to(
-    repo_url: str, branch: str, to_path: pathlib.Path,
+    repo_url: str, branch: str, to_path: pathlib.Path
 ) -> git.Repo:
-    template_repo = git.Repo.clone_from(repo_url, to_path)
-    template_repo.git.checkout(branch)
+    try:
+        template_repo = git.Repo.clone_from(repo_url, to_path)
+        template_repo.git.checkout(branch)
+    except git.CommandError as exc:
+        plug.log.error(exc.stderr)
+        raise _CloneError(dir_name=to_path.name, branch=branch) from exc
     return template_repo
 
 
@@ -140,7 +172,7 @@ def _get_authed_url(
     # FIXME temporary workaround as insert_auth is not implemented
     # in FakeAPI.get_repo_urls. Should be fixed in RepoBee 3.4.
     return api.insert_auth(
-        api.get_repo_urls([assignment_name], org_name=org_name,)[0]
+        api.get_repo_urls([assignment_name], org_name=org_name)[0]
     )
 
 
@@ -168,3 +200,9 @@ def _format_failure_message(existing_test_dirs: Iterable[pathlib.Path]) -> str:
         f"Some assignment test directories already exist, please delete "
         f"and try again: {', '.join(map(str, existing_test_dirs))}"
     )
+
+
+class _CloneError(plug.PlugError):
+    def __init__(self, dir_name: str, branch: str):
+        self.dir_name = dir_name
+        self.branch = branch
