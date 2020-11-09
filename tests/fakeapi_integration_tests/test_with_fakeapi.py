@@ -109,6 +109,16 @@ class TestGenerateRTD:
         assert existing_assignment_dir.name in result.msg
         assert "delete" in result.msg
 
+    def test_returns_error_result_when_branch_does_not_exist(
+        self, platform_url, setup_student_repos, workdir, rtd_path
+    ):
+        result = run_generate_rtd(
+            platform_url, rtd_path, workdir, branch="definitelydoesntexist"
+        )
+
+        assert result.status == plug.Status.ERROR
+        assert "Ensure that the repo and branch exist"
+
 
 @dataclasses.dataclass(frozen=True)
 class TemplateRepoDir:
@@ -170,7 +180,7 @@ def run_generate_rtd(
         f"--base-url {base_url} "
         f"--template-org-name "
         f"{repobee_testhelpers.const.TEMPLATE_ORG_NAME} "
-        f"--branch {SOLUTIONS_BRANCH} "
+        f"--branch {branch} "
         f"--reference-tests-dir {rtd}",
         plugins=[junit4],
         workdir=workdir,
