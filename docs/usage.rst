@@ -102,7 +102,8 @@ then look like this.
 
 .. note::
 
-    The RTD can be generated from tem
+    The RTD can be generated from template repositories if the complete
+    reference tests are available on any branch, see :ref:`generate_rtd`.
 
 Now, assume that we have students *ham*, *spam* and *eggs*, and their student
 repos *ham-fibonacci*, *spam-fibonacci* and *eggs-fibonacci*. Assuming that the
@@ -180,6 +181,8 @@ Other common causes of errors include:
    - See :ref:`security`.
 
 This concludes the use case example, I hope you found it enlightening.
+
+.. _generate_rtd:
 
 Generating the RTD from template repositories (``junit4 generate-rtd``)
 -----------------------------------------------------------------------
