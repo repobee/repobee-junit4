@@ -150,7 +150,9 @@ def _copy_test_classes(
 ) -> Iterable[pathlib.Path]:
     reference_test_classes = src_dir.rglob("*Test.java")
     for test_class in reference_test_classes:
-        shutil.copy(src=test_class, dst=dst_dir / test_class.name)
+        dst = dst_dir / test_class.relative_to(src_dir)
+        dst.parent.mkdir(exist_ok=True, parents=True)
+        shutil.copy(src=test_class, dst=dst)
         yield test_class.relative_to(src_dir)
 
 

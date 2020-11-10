@@ -46,7 +46,7 @@ class TestGenerateRTD:
             assignment_tests_dir = rtd_path / assignment_name
             test_files = {
                 f.relative_to(assignment_tests_dir)
-                for f in assignment_tests_dir.rglob("*")
+                for f in assignment_tests_dir.rglob("*.java")
             }
             assert test_files == EXPECTED_REFERENCE_TESTS[assignment_name]
 
@@ -151,7 +151,7 @@ ASSIGNMENT_NAMES = [
 ASSIGNMENTS_ARG = " ".join(ASSIGNMENT_NAMES)
 EXPECTED_REFERENCE_TESTS = {
     repo_dir.root.name: {
-        test_file.relative_to(repo_dir.solutions_branch / "src")
+        test_file.relative_to(repo_dir.solutions_branch)
         for test_file in repo_dir.solutions_branch.rglob("*Test.java")
     }
     for repo_dir in TEMPLATE_REPO_DIRS
