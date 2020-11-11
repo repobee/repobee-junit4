@@ -2,6 +2,7 @@ appdirs
 codecov
 colored
 daiquiri
+flake8
 pluggy>=0.8.0
 pytest-cov
 pytest-mock
