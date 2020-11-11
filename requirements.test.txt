@@ -1,4 +1,6 @@
 appdirs
+bandit
+black
 codecov
 colored
 daiquiri

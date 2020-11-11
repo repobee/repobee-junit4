@@ -12,6 +12,8 @@ with open("repobee_junit4/__version.py", mode="r", encoding="utf-8") as f:
 
 test_requirements = [
     "appdirs",
+    "bandit",
+    "black",
     "codecov",
     "daiquiri",
     "flake8",
