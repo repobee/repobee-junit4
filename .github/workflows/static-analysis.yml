@@ -22,13 +22,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements/app.txt -r requirements/test.txt
+        pip install -r requirements.txt -r requirements.test.txt
         pip install -e .[TEST]
     - name: Lint with flake8
       run: flake8 . --statistics
-    - name: Lin with pylint
-      run: pylint src/
+    - name: Lint with pylint
+      run: pylint repobee_junit4
     - name: Lint with Bandit
-      run: bandit -r src/ --skip B322 -ll --exclude src/repobee_testhelpers/localapi.py
+      run: bandit -r repobee_junit4 --skip B322 -ll
     - name: Check with Black
       run: black --check .

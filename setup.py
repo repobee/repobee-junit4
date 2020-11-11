@@ -12,11 +12,15 @@ with open("repobee_junit4/__version.py", mode="r", encoding="utf-8") as f:
 
 test_requirements = [
     "appdirs",
+    "bandit",
+    "black",
+    "codecov",
     "daiquiri",
-    "pytest>=4.0.0",
+    "flake8",
+    "pylint",
     "pytest-cov>=2.5.1",
     "pytest-mock",
-    "codecov",
+    "pytest>=4.0.0",
 ]
 required = ["repobee>=3.3.0", "daiquiri", "colored"]
 

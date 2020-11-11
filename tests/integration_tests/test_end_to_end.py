@@ -162,7 +162,7 @@ class TestPostClone:
         hooks = setup_hooks(run_student_tests=True, verbose=True)
 
         result = hooks.post_clone(
-            wrap_in_student_repo(BAD_TESTS_REPO), api=None,
+            wrap_in_student_repo(BAD_TESTS_REPO), api=None
         )
 
         assert result.status == plug.Status.WARNING
