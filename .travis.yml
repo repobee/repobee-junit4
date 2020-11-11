@@ -1,34 +1,17 @@
 language: python
 branches:
   only:
-  - master
   - "/^v\\d+\\.\\d+\\.\\d+$/"
 env:
   global:
   - REPOBEE_JUNIT4_HAMCREST="hamcrest-core-1.3.jar"
-  - REPOBEE_JUNIT4_JUNIT="junit-4.12.jar"
+  - REPOBEE_JUNIT4_JUNIT="junit-4.13.1.jar"
 matrix:
   include:
   - os: linux
     python: 3.6
-  - os: linux
-    python: 3.7
-    dist: xenial
-    sudo: true
-  - os: linux
-    python: 3.8
-  - os: osx
-    language: generic
-    sudo: true
-    before_cache:
-    - brew cleanup
-    cache:
-      directories:
-      - "$HOME/Library/Caches/Homebrew"
 install: ".travis/install.sh"
 script: ".travis/run.sh"
-after_success:
-- codecov
 notifications:
   email: false
   slack:
