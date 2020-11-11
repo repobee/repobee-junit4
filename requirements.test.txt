@@ -4,6 +4,7 @@ colored
 daiquiri
 flake8
 pluggy>=0.8.0
+pylint
 pytest-cov
 pytest-mock
 pytest>=4.0.0

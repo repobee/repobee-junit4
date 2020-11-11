@@ -15,6 +15,7 @@ test_requirements = [
     "codecov",
     "daiquiri",
     "flake8",
+    "pylint",
     "pytest-cov>=2.5.1",
     "pytest-mock",
     "pytest>=4.0.0",
