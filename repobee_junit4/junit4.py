@@ -18,7 +18,8 @@ discovered in student repositories. See the README for more details.
 """
 import os
 import pathlib
-from typing import Tuple, List
+import re
+from typing import Tuple, List, Union
 
 
 import daiquiri
@@ -57,14 +58,14 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
     )
 
     junit4_hamcrest_path = plug.cli.option(
-        help=f"absolute path to the `{_junit4_runner.HAMCREST_JAR}` library",
-        required=_junit4_runner.HAMCREST_JAR not in CLASSPATH,
+        help="absolute path to the hamcrest library",
+        required=not re.search(_junit4_runner.JUNIT4_JAR_PATTERN, CLASSPATH),
         configurable=True,
     )
 
     junit4_junit_path = plug.cli.option(
-        help=f"absolute path to the `{_junit4_runner.JUNIT_JAR}` library",
-        required=_junit4_runner.JUNIT_JAR not in CLASSPATH,
+        help="absolute path to the junit4 library",
+        required=not re.search(_junit4_runner.JUNIT4_JAR_PATTERN, CLASSPATH),
         configurable=True,
     )
 
@@ -279,13 +280,14 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
         )
         if not (
             self.junit4_hamcrest_path
-            or _junit4_runner.HAMCREST_JAR in CLASSPATH
+            or re.search(_junit4_runner.HAMCREST_JAR_PATTERN, CLASSPATH)
         ):
-            LOGGER.warning(warn.format(_junit4_runner.HAMCREST_JAR))
+            LOGGER.warning(warn.format("hamcrest"))
         if not (
-            self.junit4_junit_path or _junit4_runner.JUNIT_JAR in CLASSPATH
+            self.junit4_junit_path
+            or re.search(_junit4_runner.JUNIT4_JAR_PATTERN, CLASSPATH)
         ):
-            LOGGER.warning(warn.format(_junit4_runner.JUNIT_JAR))
+            LOGGER.warning(warn.format("junit4"))
 
         paths = list(paths)
         if self.junit4_hamcrest_path:
@@ -296,12 +298,11 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
 
     def _check_jars_exist(self):
         """Check that the specified jar files actually exist."""
-        junit_path = self.junit4_junit_path or self._parse_from_classpath(
-            _junit4_runner.JUNIT_JAR
+        junit_path = self.junit4_junit_path or _parse_from_classpath(
+            _junit4_runner.JUNIT4_JAR_PATTERN
         )
-        hamcrest_path = (
-            self.junit4_hamcrest_path
-            or self._parse_from_classpath(_junit4_runner.HAMCREST_JAR)
+        hamcrest_path = self.junit4_hamcrest_path or _parse_from_classpath(
+            _junit4_runner.HAMCREST_JAR_PATTERN
         )
         for raw_path in (junit_path, hamcrest_path):
             if not pathlib.Path(raw_path).is_file():
@@ -310,20 +311,13 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
                     "specified".format(raw_path)
                 )
 
-    def _parse_from_classpath(self, filename: str) -> pathlib.Path:
-        """Parse the full path to the given filename from the classpath, if
-        it's on the classpath at all. If there are several hits, take the first
-        one, and if there are none, raise a PlugError.
-        """
-        matches = [
-            pathlib.Path(p)
-            for p in CLASSPATH.split(os.pathsep)
-            if p.endswith(filename)
-        ]
-        if not matches:
-            raise plug.PlugError(
-                "expected to find {} on the CLASSPATH variable".format(
-                    filename
-                )
-            )
-        return matches[0] if matches else None
+
+def _parse_from_classpath(
+    pattern: Union[str, re.Pattern], classpath: str = CLASSPATH
+) -> pathlib.Path:
+    matches = re.search(pattern, classpath).groups()
+    if not matches:
+        raise plug.PlugError(
+            f"expected to find match for '{pattern}' on the CLASSPATH variable"
+        )
+    return matches[0] if matches else None

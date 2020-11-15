@@ -14,8 +14,8 @@ from repobee_junit4 import _output
 
 
 LOGGER = daiquiri.getLogger(__file__)
-HAMCREST_JAR = "hamcrest-core-1.3.jar"
-JUNIT_JAR = "junit-4.12.jar"
+HAMCREST_JAR_PATTERN = fr"([^{os.pathsep}]*hamcrest-core-1.3.jar)"
+JUNIT4_JAR_PATTERN = fr"([^{os.pathsep}]*junit-4\.\d+\.(\d+\.)?jar)"
 
 _DEFAULT_SECURITY_POLICY_TEMPLATE = """grant {{
 }};
@@ -54,13 +54,9 @@ def _generate_default_security_policy(classpath: str) -> str:
     """Generate the default security policy from the classpath. ``junit-4.12.jar``
     must be on the classpath.
     """
-    escaped_junit_jar = JUNIT_JAR.replace(".", r"\.")
-    pattern = "[^{sep}]*{junit_jar}".format(
-        sep=os.pathsep, junit_jar=escaped_junit_jar
-    )
-    junit_jar_matches = re.search(pattern, classpath)
+    junit_jar_matches = re.search(JUNIT4_JAR_PATTERN, classpath)
     if not junit_jar_matches:
-        raise ValueError("{} not on the classpath".format(JUNIT_JAR))
+        raise ValueError("junit4 jar not on the classpath")
     path = junit_jar_matches.group(0)
     return _DEFAULT_SECURITY_POLICY_TEMPLATE.format(junit4_jar_path=path)
 
