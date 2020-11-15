@@ -19,7 +19,7 @@ discovered in student repositories. See the README for more details.
 import os
 import pathlib
 import re
-from typing import Tuple, List, Union
+from typing import Tuple, List
 
 
 import daiquiri
@@ -313,7 +313,7 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
 
 
 def _parse_from_classpath(
-    pattern: Union[str, re.Pattern], classpath: str = CLASSPATH
+    pattern: str, classpath: str = CLASSPATH
 ) -> pathlib.Path:
     matches = re.search(pattern, classpath).groups()
     if not matches:
