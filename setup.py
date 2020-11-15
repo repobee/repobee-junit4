@@ -27,7 +27,7 @@ required = ["repobee>=3.3.0", "daiquiri", "colored"]
 setup(
     name="repobee-junit4",
     version=__version__,
-    description="JUnit-4.12 plugin for repobee",
+    description="JUnit4 runner plugin for RepoBee",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Simon Larsén",

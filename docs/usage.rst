@@ -37,7 +37,8 @@ command.
       ``reference_tests_dir`` option.
     - **Required** unless specified in the configuration file.
 * ``--junit4-junit-path``
-    - Path to the ``junit-4.12.jar`` library.
+    - Path to the JUnit4 library (any version of it, but we recommend
+      ``>4.13.1``).
     - Picked up automatically if on the ``CLASSPATH`` environment variable.
     - Can be specified in the configuration file with the
       ``junit_path`` option.

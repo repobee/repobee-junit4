@@ -1,4 +1,4 @@
-# `repobee-junit4`, a JUnit 4.12 test runner plugin for [RepoBee](https://github.com/repobee/repobee)
+# `repobee-junit4`, a JUnit4 test runner plugin for [RepoBee](https://github.com/repobee/repobee)
 
 [![Build Status](https://travis-ci.com/repobee/repobee-junit4.svg?branch=master)](https://travis-ci.com/repobee/repobee-junit4)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee-junit4/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee-junit4)

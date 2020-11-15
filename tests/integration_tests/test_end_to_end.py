@@ -7,7 +7,7 @@
         1. ``javac`` must be installed.
         2. A path to ``hamcrest-core-1.3.jar`` must be in the environment
         variable REPOBEE_JUNIT4_HAMCREST.
-        3. A path to ``junit-4.12.jar`` must be in the environment variable
+        3. A path to a JUnit4 jar must be in the environment variable
         REPOBEE_JUNIT4_JUNIT.
 """
 import pathlib

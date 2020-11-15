@@ -15,7 +15,7 @@ the Java SecurityManager_. The policy used looks like this:
    grant {
    };
 
-   // the `junit-4.12.jar` needs this permission for introspection
+   // the JUnit4 jar needs this permission for introspection
    grant codeBase "file:{junit4_jar_path}" {{
        permission java.lang.RuntimePermission "accessDeclaredMembers";
    }};
@@ -23,8 +23,8 @@ the Java SecurityManager_. The policy used looks like this:
 This policy disallows student code from doing most illicit things, such as
 accessing files outside of the codebases's directory, or accessing the network.
 The ``{junit4_jar_path}`` is dynamically resolved during runtime, and will lend
-the actual ``junit-4.12.jar`` archive that is used to run the test classes
-sufficient permissions to do so.
+the actual JUnit4 jar archive that is used to run the test classes sufficient
+permissions to do so.
 
 This policy seems to work well for introductory courses in Java, but there may
 be snags because of how restrictive it is. If you find that some permission

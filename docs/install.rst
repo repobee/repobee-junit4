@@ -12,7 +12,7 @@ Requirements
 
    1. RepoBee installed
    2. A JDK (preferably 8+, 7 may work) installed
-   3. ``junit-4.12.jar`` and ``hamcest-core-1.3.jar`` downloaded
+   3. ``junit-4.13.1.jar`` and ``hamcest-core-1.3.jar`` downloaded
 
 First of all, make sure that RepoBee is installed and up-to-date. For a
 first-time install of RepoBee, see the `RepoBee install docs`_.
@@ -29,7 +29,7 @@ jars. They can be downloaded from Maven Central.
 
 .. code-block:: bash
 
-    curl https://search.maven.org/remotecontent?filepath=junit/junit/4.12/junit-4.12.jar -o junit-4.12.jar
+    curl https://search.maven.org/remotecontent?filepath=junit/junit/4.13.1/junit-4.13.1.jar -o junit-4.13.1.jar
     curl https://search.maven.org/remotecontent?filepath=org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar -o hamcrest-core-1.3.jar
 
 If you don't have ``curl`` installed, just copy the links above and download
@@ -58,14 +58,14 @@ Configuration
 Some options for ``repobee-junit4`` can be configured in the `RepoBee
 configuration file`_ by adding the ``[junit4]`` section. Everything
 ``repobee-junit4`` needs to operate *can* be provided on the command line, but
-we strongly recommend adding the absolute paths to the ``junit-4.12.jar`` and
+we strongly recommend adding the absolute paths to the ``junit-4.13.1.jar`` and
 ``hamcrest-core-1.3.jar`` files to the config file. Simply append the following
 to the end of the configuration file. Here's a sample configuration.
 
 .. code-block:: bash
 
    [junit4]
-   junit4_junit_path = /absolute/path/to/junit-4.12.jar
+   junit4_junit_path = /absolute/path/to/junit-4.13.1.jar
    junit4_hamcrest_path = /absolute/path/to/hamcrest-core-1.3.jar
    junit4_reference_tests_dir = /absolute/path/to/reference_tests_dir
    junit4_timeout = 5
