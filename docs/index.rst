@@ -22,9 +22,6 @@ plugin.
    install
    usage
    security
-   code
-
-
 
 Indices and tables
 ==================
