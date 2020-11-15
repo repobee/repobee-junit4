@@ -9,7 +9,7 @@ env:
 matrix:
   include:
   - os: linux
-    python: 3.6
+    python: 3.8
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 notifications:
