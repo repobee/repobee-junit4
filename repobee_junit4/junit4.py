@@ -299,10 +299,10 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
     def _check_jars_exist(self):
         """Check that the specified jar files actually exist."""
         junit_path = self.junit4_junit_path or _parse_from_classpath(
-            _junit4_runner.JUNIT4_JAR_PATTERN
+            _junit4_runner.JUNIT4_JAR_PATTERN, CLASSPATH
         )
         hamcrest_path = self.junit4_hamcrest_path or _parse_from_classpath(
-            _junit4_runner.HAMCREST_JAR_PATTERN
+            _junit4_runner.HAMCREST_JAR_PATTERN, CLASSPATH
         )
         for raw_path in (junit_path, hamcrest_path):
             if not pathlib.Path(raw_path).is_file():
@@ -312,12 +312,10 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
                 )
 
 
-def _parse_from_classpath(
-    pattern: str, classpath: str = CLASSPATH
-) -> pathlib.Path:
-    matches = re.search(pattern, classpath).groups()
+def _parse_from_classpath(pattern: str, classpath: str) -> pathlib.Path:
+    matches = re.search(pattern, classpath)
     if not matches:
         raise plug.PlugError(
             f"expected to find match for '{pattern}' on the CLASSPATH variable"
         )
-    return matches[0] if matches else None
+    return matches.group(0) if matches else None
