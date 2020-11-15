@@ -56,11 +56,26 @@ Configuration
 -------------
 
 Some options for ``repobee-junit4`` can be configured in the `RepoBee
-configuration file`_ by adding the ``[junit4]`` section. Everything
-``repobee-junit4`` needs to operate *can* be provided on the command line, but
-we strongly recommend adding the absolute paths to the ``junit-4.13.1.jar`` and
-``hamcrest-core-1.3.jar`` files to the config file. Simply append the following
-to the end of the configuration file. Here's a sample configuration.
+configuration file
+<https://repobee.readthedocs.io/en/stable/getting_started.html#editing-the-configuration-file-the-wizard-and-show-actions>`_.
+Everything ``repobee-junit4`` needs to operate *can* be provided on the command
+line, but we strongly recommend adding the absolute paths to the
+``junit-4.13.1.jar`` and ``hamcrest-core-1.3.jar`` files to the config file.
+The easiest way to edit the configuration file is to run the ``config wizard``
+command. Note that **the junit4 plugin must be active**, or the wizard won't
+know to configure it. Here, we temporarily activate it with ``-p junit4``,
+and select the ``junit4`` section for editing.
+
+.. code-block:: bash
+
+    $ repobee -p junit4 config wizard
+    Editing config file at /home/slarse/.config/repobee/config.ini
+    Select a section to configure:
+     repobee
+    ●junit4 # make sure to select the junit4 section for editing
+    [ ... set your options ... ]
+
+Here's an example of what the config may look like after configuration.
 
 .. code-block:: bash
 
@@ -77,5 +92,4 @@ to the end of the configuration file. Here's a sample configuration.
 See :ref:`cli` for a complete list of arguments that can be configured.
 
 .. _RepoBee install docs: https://repobee.readthedocs.io/en/latest/install.html
-.. _RepoBee configuration file: https://repobee.readthedocs.io/en/latest/configuration.html#configuration-file
 .. _Using existing plugins: https://repobee.readthedocs.io/en/latest/plugins.html#using-existing-plugins
