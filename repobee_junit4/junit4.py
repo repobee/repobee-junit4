@@ -4,7 +4,7 @@ classes.
 .. important::
 
     Requires ``javac`` and ``java`` to be installed, and having
-    ``hamcrest-core-1.3.jar`` and ``junit-4.12.jar`` on the local macine.
+    ``hamcrest-core-1.3.jar`` and ``junit-4.13.1.jar`` on the local macine.
 
 This plugin performs a fairly complicated tasks of running test classes from
 pre-specified reference tests on production classes that are dynamically

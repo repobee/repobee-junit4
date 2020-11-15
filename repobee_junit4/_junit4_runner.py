@@ -51,8 +51,8 @@ def security_policy(classpath: str, active: bool):
 
 
 def _generate_default_security_policy(classpath: str) -> str:
-    """Generate the default security policy from the classpath. ``junit-4.12.jar``
-    must be on the classpath.
+    """Generate the default security policy from the classpath. JUnit4 jar must
+    be on the classpath.
     """
     junit_jar_matches = re.search(JUNIT4_JAR_PATTERN, classpath)
     if not junit_jar_matches:
