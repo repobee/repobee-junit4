@@ -3,6 +3,8 @@
 Usage
 *****
 
+For general usage of plugins, refer to
+
 Terminology and conventions
 ---------------------------
 ``repobee-junit4`` adds some additional terminology to RepoBee that you need
@@ -33,24 +35,19 @@ command.
 
 * ``--junit4-reference-tests-dir``
     - Path to the RTD.
-    - Can be specified in the configuration file with the
-      ``reference_tests_dir`` option.
-    - **Required** unless specified in the configuration file.
+    - Can be configured
+    - **Required** unless configured
 * ``--junit4-junit-path``
     - Path to the JUnit4 library (any version of it, but we recommend
       ``>4.13.1``).
     - Picked up automatically if on the ``CLASSPATH`` environment variable.
-    - Can be specified in the configuration file with the
-      ``junit_path`` option.
-    - **Required** unless specified on the ``CLASSPATH`` variable, or in the
-      configuration file.
+    - Can be configured
+    - **Required** unless configured
 * ``--junit4-hamcrest-path``
     - Path to the ``hamcrest-core-1.3.jar`` library.
     - Picked up automatically if on the ``CLASSPATH`` environment variable.
-    - Can be specified in the configuration file with the
-      ``hamcrest_path`` option.
-    - **Required** unless specified on the ``CLASSPATH`` variable, or in the
-      configuration file.
+    - Can be configured
+    - **Required** unless configured
 * ``--junit4-run-student-tests``
     - Run test classes from the student repository instead of from the
       reference tests.
@@ -73,7 +70,7 @@ command.
 * ``--junit4-timeout``
     - The maximum amount of time a test class is allowed to run before timing
       out. Defaults to a sane value.
-    - Can be specified in the config file with the ``timeout`` option.
+    - Can be configured
 
 .. _use case:
 
