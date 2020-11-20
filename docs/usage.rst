@@ -200,25 +200,33 @@ repositories on the ``master`` branch, and the full solutions on a branch called
 
 Given that the reference tests are present on a branch in a template repo, the
 ``junit4 generate-rtd`` command can be used to extract test classes from it.
-Execute it like so.
+Assuming that the reference tests are on the ``solutions`` branch of the
+``fibonacci`` template repo, the following command should do the
+trick.
 
 .. code-block:: bash
 
-   $ repobee -p junit4 generate-rtd -a fibonacci -s ham spam eggs --reference-tests-dir /path/to/reference_tests --branch solutions
+   $ repobee -p junit4 \
+        junit4 generate-rtd \
+        --assignments fibonacci \
+        --students ham spam eggs \
+        --reference-tests-dir /path/to/reference_tests \
+        --branch solutions
 
-Assuming ``FiboTest.java`` was present on the ``solutions``` branch, a
-test directory called ``fibonacci`` should have been generated in the
-reference tests directory:
+Assuming ``FiboTest.java`` was present on the ``solutions``` branch, a test
+directory called ``fibonacci`` should have been generated in the reference
+tests directory:
 
 .. code-block:: bash
 
    reference_tests
    └── fibonacci
-       └── FiboTest.java
+       └── src
+           └── FiboTest.java
 
 To later generate test directories for other assignments, simply run the
-command again but with other assignments (i.e. other arguments for the ``-a``
-option).
+command again but with other assignments (i.e. other arguments for the
+``--assignments`` option).
 
 .. important::
 
