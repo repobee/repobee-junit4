@@ -214,6 +214,11 @@ trick.
         --branch solutions \
         --template-org-name course-template-repos
 
+.. note::
+
+    If you haven't configured RepoBee for your targeted platform, the command
+    may ask for additional options.
+
 Assuming ``FiboTest.java`` was present on the ``solutions``` branch, a test
 directory called ``fibonacci`` should have been generated in the reference
 tests directory:
