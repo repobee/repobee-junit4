@@ -112,16 +112,11 @@ this:
 
 .. code-block:: none
 
-   $ repobee -p junit4 clone -a fibonacci -s ham spam eggs --junit4-reference-tests-dir /path/to/reference_tests
-   [INFO] cloning into student repos ...
-   [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/ham-fibonacci
-   [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/spam-fibonacci
-   [INFO] Cloned into https://some-enterprise-host/some-course-org/inda-18/eggs-fibonacci
-   [INFO] executing post clone hooks on repos
-   [INFO] executing post clone hooks on eggs-fibonacci
-   [INFO] executing post clone hooks on spam-fibonacci
-   [INFO] executing post clone hooks on ham-fibonacci
-   [INFO]
+   $ repobee -p junit4 \
+        repos clone \
+        -a fibonacci \
+        -s ham spam eggs \
+        --junit4-reference-tests-dir /path/to/reference_tests
    hook results for spam-fibonacci
 
    junit4: SUCCESS
