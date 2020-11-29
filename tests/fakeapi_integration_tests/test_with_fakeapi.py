@@ -181,7 +181,7 @@ def run_generate_rtd(
         f"--template-org-name "
         f"{repobee_testhelpers.const.TEMPLATE_ORG_NAME} "
         f"--branch {branch} "
-        f"--reference-tests-dir {rtd}",
+        f"--junit4-reference-tests-dir {rtd}",
         plugins=[junit4],
         workdir=workdir,
     )[str(_generate_rtd.JUNIT4_COMMAND_CATEGORY.generate_rtd)][0]

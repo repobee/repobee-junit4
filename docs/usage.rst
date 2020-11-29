@@ -205,7 +205,7 @@ trick.
    $ repobee -p junit4 \
         junit4 generate-rtd \
         --assignments fibonacci \
-        --reference-tests-dir /path/to/reference_tests \
+        --junit4-reference-tests-dir /path/to/reference_tests \
         --branch solutions \
         --template-org-name course-template-repos
 

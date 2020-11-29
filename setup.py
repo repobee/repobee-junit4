@@ -22,7 +22,7 @@ test_requirements = [
     "pytest-mock",
     "pytest>=4.0.0",
 ]
-required = ["repobee>=3.3.0", "daiquiri", "colored"]
+required = ["repobee>=3.3.1", "daiquiri", "colored"]
 
 setup(
     name="repobee-junit4",

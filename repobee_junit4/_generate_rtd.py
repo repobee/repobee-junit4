@@ -42,10 +42,11 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
         ],
     )
 
-    reference_tests_dir = plug.cli.option(
+    junit4_reference_tests_dir = plug.cli.option(
         help="path to place the root reference tets directory at",
         converter=pathlib.Path,
         required=True,
+        configurable=True,
     )
     branch = plug.cli.option(
         help="the branch to search for reference tests in each template "
@@ -55,7 +56,7 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
 
     def command(self, api: plug.PlatformAPI):
         existing_test_dirs = _get_existing_assignment_test_dirs(
-            self.reference_tests_dir, self.args.assignments
+            self.junit4_reference_tests_dir, self.args.assignments
         )
         if existing_test_dirs:
             return plug.Result(
@@ -73,7 +74,7 @@ class GenerateRTD(plug.Plugin, plug.cli.Command):
             assignment_names_progress,
             branch=self.branch,
             template_org_name=self.args.template_org_name,
-            reference_tests_dir=self.reference_tests_dir,
+            reference_tests_dir=self.junit4_reference_tests_dir,
             api=api,
         )
 
