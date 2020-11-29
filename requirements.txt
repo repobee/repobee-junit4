@@ -1,3 +1,3 @@
 colored
 daiquiri
-repobee>=3.3.1
+repobee>=3.4.1
