@@ -29,6 +29,6 @@ jobs:
     - name: Lint with pylint
       run: pylint repobee_junit4
     - name: Lint with Bandit
-      run: bandit -r repobee_junit4 --skip B322 -ll
+      run: bandit -r repobee_junit4 -ll
     - name: Check with Black
       run: black --check .

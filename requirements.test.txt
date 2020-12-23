@@ -1,5 +1,5 @@
 appdirs
-bandit
+bandit>=1.7.0
 black
 codecov
 colored
