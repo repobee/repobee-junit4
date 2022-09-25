@@ -168,7 +168,9 @@ class JUnit4Hooks(plug.Plugin, plug.cli.CommandExtension):
             a tuple of lists ``(succeeded, failed)``, where ``succeeded``
             are tuples on the form ``(test_class, prod_class)`` paths.
         """
-        java_files = list(repo.path.rglob("*.java"))
+        java_files = [
+            file for file in repo.path.rglob("*.java") if file.is_file()
+        ]
         assignment_name = self._extract_assignment_name(repo.name)
         reference_test_classes = self._find_test_classes(assignment_name)
         test_classes = (

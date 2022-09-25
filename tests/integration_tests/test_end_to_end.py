@@ -76,6 +76,9 @@ UNAUTHORIZED_NETWORK_ACCESS_REPO = (
 BAD_TESTS_REPO = REPO_DIR / "student-with-bad-tests-week-10"
 DUPLICATE_TESTS_REPO = REPO_DIR / "student-with-duplicate-tests-week-10"
 ENDLESS_WHILE_LOOP = REPO_DIR / "endless-loop-week-10"
+DIRECTORY_WITH_JAVA_SUFFIX_REPO = (
+    REPO_DIR / "directory-with-java-suffix-week-10"
+)
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
@@ -167,6 +170,16 @@ class TestPostClone:
 
         assert result.status == plug.Status.WARNING
         assert "Student wrote a bad test" in str(result.msg)
+
+    def test_handles_directory_with_java_suffix(self):
+        """Should not attempt to read a directory with .java suffix like a file."""
+        hooks = setup_hooks(verbose=True)
+
+        result = hooks.post_clone(
+            wrap_in_student_repo(DIRECTORY_WITH_JAVA_SUFFIX_REPO), api=None
+        )
+
+        assert result.status == plug.Status.SUCCESS
 
     def test_handles_duplicate_student_tests(self):
         hooks = setup_hooks(run_student_tests=True, verbose=True)
