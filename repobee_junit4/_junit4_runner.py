@@ -14,8 +14,8 @@ from repobee_junit4 import _output
 
 
 LOGGER = daiquiri.getLogger(__file__)
-HAMCREST_JAR_PATTERN = fr"([^{os.pathsep}]*hamcrest-core-1.3.jar)"
-JUNIT4_JAR_PATTERN = fr"([^{os.pathsep}]*junit-4\.\d+\.(\d+\.)?jar)"
+HAMCREST_JAR_PATTERN = rf"([^{os.pathsep}]*hamcrest-core-1.3.jar)"
+JUNIT4_JAR_PATTERN = rf"([^{os.pathsep}]*junit-4\.\d+\.(\d+\.)?jar)"
 
 _DEFAULT_SECURITY_POLICY_TEMPLATE = """grant {{
 }};
