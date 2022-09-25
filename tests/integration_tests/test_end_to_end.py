@@ -76,7 +76,9 @@ UNAUTHORIZED_NETWORK_ACCESS_REPO = (
 BAD_TESTS_REPO = REPO_DIR / "student-with-bad-tests-week-10"
 DUPLICATE_TESTS_REPO = REPO_DIR / "student-with-duplicate-tests-week-10"
 ENDLESS_WHILE_LOOP = REPO_DIR / "endless-loop-week-10"
-DIRECTORY_WITH_JAVA_SUFFIX_REPO = REPO_DIR / "directory-with-java-suffix-week-10"
+DIRECTORY_WITH_JAVA_SUFFIX_REPO = (
+    REPO_DIR / "directory-with-java-suffix-week-10"
+)
 
 assert SUCCESS_REPO.exists(), "test pre-requisite error, dir must exist"
 assert FAIL_REPO.exists(), "test pre-requisite error, dir must exist"
