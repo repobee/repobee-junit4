@@ -14,7 +14,7 @@ import subprocess
 import math
 from typing import Optional
 
-from colored import bg, style
+from colored import bg, Style
 
 from repobee_junit4 import _java
 
@@ -143,14 +143,14 @@ def test_result_header(
     else:
         test_results = "Timed out after {} seconds".format(math.ceil(timeout))
     msg = "{}{}{}: {}".format(
-        title_color, test_class_name, style.RESET, test_results
+        title_color, test_class_name, Style.RESET, test_results
     )
     return msg
 
 
 def format_results(test_results, compile_failed, verbose, very_verbose):
     def format_compile_error(res):
-        msg = "{}Compile error:{} {}".format(bg("red"), style.RESET, res.msg)
+        msg = "{}Compile error:{} {}".format(bg("red"), Style.RESET, res.msg)
         if very_verbose:
             return msg
         elif verbose:
