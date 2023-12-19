@@ -1,3 +1,1 @@
-colored
-daiquiri
-repobee>=3.4.1
+.
