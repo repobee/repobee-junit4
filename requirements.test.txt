@@ -1,9 +1,9 @@
+-r requirements.txt
+
 appdirs
 bandit>=1.7.0
 black
 codecov
-colored
-daiquiri
 flake8
 pluggy>=0.8.0
 pylint

@@ -12,10 +12,10 @@ jobs:
     environment: pypi-deploy
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.7
+    - name: Set up Python 3.9
       uses: actions/setup-python@v4
       with:
-        python-version: 3.7
+        python-version: 3.9
     - name: Package repobee-junit4
       run: |
         python -m pip install --upgrade pip wheel
