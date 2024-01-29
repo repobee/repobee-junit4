@@ -9,6 +9,7 @@ is abstract.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import pathlib
 import re
 import os

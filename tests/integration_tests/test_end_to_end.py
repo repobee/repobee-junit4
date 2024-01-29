@@ -10,6 +10,7 @@
         3. A path to a JUnit4 jar must be in the environment variable
         REPOBEE_JUNIT4_JUNIT.
 """
+
 import pathlib
 import shutil
 import tempfile

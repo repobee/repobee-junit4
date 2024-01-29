@@ -2,7 +2,7 @@
 
 appdirs
 bandit>=1.7.0
-black
+black==24.1.1
 codecov
 flake8
 pluggy>=0.8.0

@@ -1,6 +1,7 @@
 """Command for generating the reference tests directory from solutions branches
 in template repositories.
 """
+
 import shutil
 import pathlib
 import tempfile

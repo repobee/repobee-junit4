@@ -1,4 +1,5 @@
 """Fixtures for the integrations tests."""
+
 import pytest
 from pathlib import Path
 
