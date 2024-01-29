@@ -16,6 +16,7 @@ discovered in student repositories. See the README for more details.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import os
 import pathlib
 import re

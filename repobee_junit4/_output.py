@@ -5,6 +5,7 @@
 
 .. moduleauthor:: Simon Larsén
 """
+
 import sys
 import os
 import re
